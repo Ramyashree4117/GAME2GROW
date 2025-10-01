@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ball Catcher Game</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #000000;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            border: 1px solid #fff;
+            background-color: #fff;
+        }
+        #instructions {
+            margin-bottom: 10px;
+            font-size: 16px;
+            color: #ffffff;
+            text-align: center;
+        }
+        #controls {
+            margin-top: 10px;
+            display: flex;
+            gap: 30px;
+        }
+        .arrow-btn {
+            padding: 12px 24px;
+            font-size: 20px;
+            cursor: pointer;
+            background-color: #333333;
+            color: #ffffff;
+            border: 1px solid #ffffff;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+        }
+        .arrow-btn:hover {
+            background-color: #555555;
+        }
+        .arrow-btn:active {
+            background-color: #777777;
+        }
+        #reward {
+            margin-top: 10px;
+            font-size: 18px;
+            color: lime;
+            text-align: center;
+        }
+        #debug {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #ffffff;
+            text-align: center;
+        }
+        #gameOver {
+            margin-top: 20px;
+            font-size: 24px;
+            color: tomato;
+            text-align: center;
+            display: none;
+        }
+        #formulasList {
+            margin-top: 10px;
+            list-style-type: none;
+            padding: 0;
+            color: #ffffff;
+        }
+        #restartBtn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #ffffff;
+            color: #000000;
+            border: 1px solid #ffffff;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="instructions">Click/Hold ← to move left, → to move right (or use Up/Down Arrow keys)</div>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <div id="controls">
+        <button class="arrow-btn" id="leftBtn">←</button>
+        <button class="arrow-btn" id="rightBtn">→</button>
+    </div>
+    <div id="reward"></div>
+    <div id="debug"></div>
+    <div id="gameOver">
+        <p>Game Over!</p>
+        <p>Formulas Earned:</p>
+        <ul id="formulasList"></ul>
+        <button id="restartBtn">Restart Game</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const rewardDiv = document.getElementById('reward');
+        const debugDiv = document.getElementById('debug');
+        const gameOverDiv = document.getElementById('gameOver');
+        const formulasList = document.getElementById('formulasList');
+        const restartBtn = document.getElementById('restartBtn');
+        const leftBtn = document.getElementById('leftBtn');
+        const rightBtn = document.getElementById('rightBtn');
+
+        // Game variables
+        let ballX = Math.random() * (canvas.width - 20) + 10;
+        let ballY = 0;
+        const ballRadius = 10;
+        const ballSpeed = 2;
+
+        let catcherX = canvas.width / 2 - 25;
+        const catcherWidth = 50;
+        const catcherHeight = 10;
+        const catcherSpeed = 3;
+
+        let isGameOver = false;
+        let collectedFormulas = [];
+        const mathFormulas = [
+            'sin²θ + cos²θ = 1',
+            'tanθ = sinθ / cosθ',
+            'Pythagorean Theorem: a² + b² = c²',
+            'Area of a Circle: πr²',
+            'Quadratic Formula: x = [-b ± √(b² - 4ac)] / (2a)',
+            'Euler\'s Formula: e^(iπ) + 1 = 0',
+            'Derivative of sin(x): cos(x)',
+            'Integral of cos(x): sin(x) + C',
+            'Binomial Theorem: (a + b)^n = Σ [n choose k] a^(n-k) b^k',
+            'Law of Cosines: c² = a² + b² - 2ab cos(C)'
+        ];
+        let availableFormulas = [...mathFormulas];
+        let usedFormulas = [];
+
+        // Control states
+        let upPressed = false;
+        let downPressed = false;
+        let leftBtnPressed = false;
+        let rightBtnPressed = false;
+        let leftInterval = null;
+        let rightInterval = null;
+
+        // Keyboard events
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') {
+                upPressed = true;
+                debugDiv.textContent = 'Up Arrow pressed (Move Left)';
+            }
+            if (e.key === 'ArrowDown') {
+                downPressed = true;
+                debugDiv.textContent = 'Down Arrow pressed (Move Right)';
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowUp') {
+                upPressed = false;
+                debugDiv.textContent = '';
+            }
+            if (e.key === 'ArrowDown') {
+                downPressed = false;
+                debugDiv.textContent = '';
+            }
+        });
+
+        // Button events for continuous movement
+        function startLeftMovement() {
+            leftBtnPressed = true;
+            debugDiv.textContent = 'Left Button held';
+            if (!leftInterval) {
+                leftInterval = setInterval(() => {
+                    if (catcherX > 0) catcherX -= catcherSpeed;
+                }, 16); // ~60fps
+            }
+        }
+
+        function startRightMovement() {
+            rightBtnPressed = true;
+            debugDiv.textContent = 'Right Button held';
+            if (!rightInterval) {
+                rightInterval = setInterval(() => {
+                    if (catcherX + catcherWidth < canvas.width) catcherX += catcherSpeed;
+                }, 16);
+            }
+        }
+
+        function stopLeftMovement() {
+            leftBtnPressed = false;
+            clearInterval(leftInterval);
+            leftInterval = null;
+            debugDiv.textContent = '';
+        }
+
+        function stopRightMovement() {
+            rightBtnPressed = false;
+            clearInterval(rightInterval);
+            rightInterval = null;
+            debugDiv.textContent = '';
+        }
+
+        leftBtn.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            startLeftMovement();
+        });
+
+        rightBtn.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            startRightMovement();
+        });
+
+        leftBtn.addEventListener('pointerup', stopLeftMovement);
+        rightBtn.addEventListener('pointerup', stopRightMovement);
+        leftBtn.addEventListener('pointerleave', stopLeftMovement);
+        rightBtn.addEventListener('pointerleave', stopRightMovement);
+
+        // For touch devices
+        leftBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            startLeftMovement();
+        });
+
+        rightBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            startRightMovement();
+        });
+
+        leftBtn.addEventListener('touchend', stopLeftMovement);
+        rightBtn.addEventListener('touchend', stopRightMovement);
+
+        restartBtn.addEventListener('click', restartGame);
+
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+            ctx.fillStyle = 'red';
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawCatcher() {
+            ctx.beginPath();
+            ctx.rect(catcherX, canvas.height - catcherHeight, catcherWidth, catcherHeight);
+            ctx.fillStyle = 'blue';
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function updateCatcher() {
+            // Button inputs take priority, but keyboard inputs still work
+            if (leftBtnPressed && catcherX > 0) {
+                catcherX -= catcherSpeed;
+            } else if (upPressed && catcherX > 0) {
+                catcherX -= catcherSpeed;
+            }
+            if (rightBtnPressed && catcherX + catcherWidth < canvas.width) {
+                catcherX += catcherSpeed;
+            } else if (downPressed && catcherX + catcherWidth < canvas.width) {
+                catcherX += catcherSpeed;
+            }
+        }
+
+        function checkCatch() {
+            if (ballY + ballRadius >= canvas.height - catcherHeight &&
+                ballX >= catcherX && ballX <= catcherX + catcherWidth) {
+                // Caught
+                if (availableFormulas.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * availableFormulas.length);
+                    const randomFormula = availableFormulas[randomIndex];
+                    collectedFormulas.push(randomFormula);
+                    usedFormulas.push(randomFormula);
+                    availableFormulas.splice(randomIndex, 1);
+                    rewardDiv.textContent = `Reward: ${randomFormula}`;
+                } else {
+                    rewardDiv.textContent = 'No more formulas available!';
+                }
+                resetBall();
+                setTimeout(() => { rewardDiv.textContent = ''; }, 3000);
+            } else if (ballY + ballRadius >= canvas.height) {
+                // Missed
+                endGame();
+            }
+        }
+
+        function resetBall() {
+            ballX = Math.random() * (canvas.width - 20) + 10;
+            ballY = 0;
+        }
+
+        function endGame() {
+            isGameOver = true;
+            gameOverDiv.style.display = 'block';
+            formulasList.innerHTML = '';
+            collectedFormulas.forEach(formula => {
+                const li = document.createElement('li');
+                li.textContent = formula;
+                formulasList.appendChild(li);
+            });
+        }
+
+        function restartGame() {
+            isGameOver = false;
+            gameOverDiv.style.display = 'none';
+            collectedFormulas = [];
+            availableFormulas = [...mathFormulas];
+            usedFormulas = [];
+            resetBall();
+            catcherX = canvas.width / 2 - 25;
+            rewardDiv.textContent = '';
+            debugDiv.textContent = '';
+            stopLeftMovement();
+            stopRightMovement();
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (!isGameOver) {
+                drawBall();
+                drawCatcher();
+                updateCatcher();
+
+                ballY += ballSpeed;
+                checkCatch();
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>

@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eco Hero</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            touch-action: none;
+        }
+        /* Stylized Gradient Backgrounds */
+        .game-bg-park { background: linear-gradient(to bottom, #a8e063, #56ab2f); }
+        .game-bg-city { background: linear-gradient(to bottom, #bdc3c7, #2c3e50); }
+        .game-bg-beach { background: linear-gradient(180deg, #87CEEB 60%, #F0E68C 40%); }
+        .game-bg-forest { background: linear-gradient(to bottom, #134E5E, #71B280); }
+        .game-bg-river { background: linear-gradient(to right, #43cea2, #185a9d); }
+        .game-bg-mountain { background: linear-gradient(to top, #636363, #a2ab58); }
+        .game-bg-farm { background: linear-gradient(180deg, #96c93d 70%, #8A3324 30%); }
+        .game-bg-reef { background: linear-gradient(to bottom, #1FA2FF, #12D8FA, #A6FFCB); }
+
+        .game-item {
+            cursor: grab;
+            user-select: none;
+            transition: transform 0.2s ease-in-out;
+        }
+        .game-item:active {
+            cursor: grabbing;
+            transform: scale(1.1);
+        }
+        .bin, .tree-spot {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .drag-over {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 255, 0, 0.8);
+        }
+        .feedback {
+            animation: fadeOut 2s forwards;
+            pointer-events: none;
+        }
+        @keyframes fadeOut {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-20px); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-2">
+
+    <!-- Location Selection Screen -->
+    <div id="location-selection-screen" class="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-2xl p-6 text-center">
+        <h1 class="text-4xl sm:text-5xl font-bold text-green-700 mb-2">Eco Hero World Map</h1>
+        <p class="text-lg text-gray-600 mb-4">Choose a location to start your mission!</p>
+        <button id="rules-btn" class="mb-6 bg-blue-500 text-white font-bold py-2 px-6 rounded-full hover:bg-blue-600 transition-transform transform hover:scale-105">How to Play</button>
+        <div id="location-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <!-- Locations will be dynamically added here -->
+        </div>
+    </div>
+
+    <!-- Rules Modal -->
+    <div id="rules-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-xl w-11/12 max-w-lg max-h-[90vh] overflow-y-auto">
+            <h2 class="text-3xl font-bold text-green-700 mb-4 text-center">How to Play</h2>
+            <div class="text-left text-gray-700 space-y-3">
+                <div>
+                    <h3 class="font-bold text-lg text-green-800">🌍 The Objective</h3>
+                    <p>Your goal is to become an Eco Hero by cleaning up all the locations on the World Map. Each location has several missions for you to complete.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg text-green-800">👆 Gameplay</h3>
+                    <p>To complete a mission, drag items from the play area to the correct action bins at the bottom of the screen.</p>
+                </div>
+                 <div>
+                    <h3 class="font-bold text-lg text-green-800">✅ Actions</h3>
+                    <ul class="list-disc list-inside ml-4">
+                        <li><strong>Sort:</strong> Drag trash (🗑️), recyclables (♻️), and compost (🌿) to the right bins.</li>
+                        <li><strong>Plant & Grow:</strong> Some levels require you to plant saplings (🌱) or water plants (💧).</li>
+                    </ul>
+                </div>
+                 <div>
+                    <h3 class="font-bold text-lg text-green-800">🏆 Winning</h3>
+                    <p>Complete all the missions in a location to clean it up and earn your final score for that area!</p>
+                </div>
+            </div>
+            <div class="text-center mt-6">
+                <button id="close-rules-btn" class="bg-green-600 text-white font-bold py-2 px-6 rounded-full hover:bg-green-700 transition-transform transform hover:scale-105">Let's Go!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Container -->
+    <div id="game-container" class="hidden w-full max-w-7xl mx-auto bg-white rounded-2xl shadow-2xl p-2 sm:p-4 h-screen flex flex-col">
+        
+        <header class="flex flex-wrap justify-between items-center pb-2 border-b-2 border-green-200">
+            <h1 class="text-xl sm:text-2xl font-bold text-green-700">Eco Hero</h1>
+            <div class="flex items-center space-x-3 text-sm">
+                <div class="font-semibold">Level: <span id="level-display" class="text-green-600">1</span></div>
+                <div class="font-semibold">Score: <span id="score-display" class="text-yellow-500">0</span></div>
+            </div>
+             <button id="back-to-map-btn" class="bg-gray-500 text-white font-bold py-2 px-4 rounded-full hover:bg-gray-600 transition-transform transform hover:scale-105 text-sm">← World Map</button>
+        </header>
+
+        <div id="mission-control" class="text-center my-1 p-1 bg-green-50 rounded-lg">
+            <h2 class="text-base font-semibold text-green-800">Mission</h2>
+            <p id="mission-description" class="text-gray-600 text-xs">Clean the park by sorting the items!</p>
+            <p id="level-hint" class="text-[10px] leading-tight text-gray-500 mt-1 italic">Hint: Drag items to the correct bin!</p>
+        </div>
+
+        <main id="game-area" class="relative w-full flex-grow bg-cover bg-center rounded-lg overflow-hidden game-bg-park">
+        </main>
+        
+        <footer id="interaction-area" class="pt-1 mt-1 flex justify-around items-end border-t-2 border-green-200">
+        </footer>
+
+        <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white p-8 rounded-2xl shadow-xl text-center w-11/12 max-w-md">
+                <h2 id="modal-title" class="text-3xl font-bold text-green-700 mb-4">Level Complete!</h2>
+                <p id="modal-message" class="text-lg text-gray-700 mb-6">Great job, Eco Hero!</p>
+                
+                <div id="eco-fact-container" class="my-4 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                    <h3 class="font-bold text-blue-800">Eco Fact!</h3>
+                    <p id="eco-fact" class="text-sm text-blue-700"></p>
+                </div>
+
+                <button id="next-level-btn" class="bg-green-600 text-white font-bold py-3 px-8 rounded-full hover:bg-green-700 transition-transform transform hover:scale-105">Next Mission</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const locationScreen = document.getElementById('location-selection-screen');
+        const locationGrid = document.getElementById('location-grid');
+        const rulesBtn = document.getElementById('rules-btn');
+        const rulesModal = document.getElementById('rules-modal');
+        const closeRulesBtn = document.getElementById('close-rules-btn');
+        const gameContainer = document.getElementById('game-container');
+        const backToMapBtn = document.getElementById('back-to-map-btn');
+        const levelDisplay = document.getElementById('level-display');
+        const scoreDisplay = document.getElementById('score-display');
+        const missionDescription = document.getElementById('mission-description');
+        const levelHint = document.getElementById('level-hint');
+        const gameArea = document.getElementById('game-area');
+        const interactionArea = document.getElementById('interaction-area');
+        const modal = document.getElementById('modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const ecoFactContainer = document.getElementById('eco-fact-container');
+        const ecoFact = document.getElementById('eco-fact');
+        const nextLevelBtn = document.getElementById('next-level-btn');
+
+        // Game State
+        let score = 0;
+        let itemsToComplete = 0;
+        let completedItems = 0;
+        let draggedItem = null;
+        let currentLevelData = null;
+        let selectedLocationLevels = [];
+        let currentLevelIndex = 0;
+
+        const ecoFacts = [
+            "Recycling one aluminum can saves enough energy to run a TV for three hours.",
+            "About 1/3 of the food produced globally is wasted each year. Composting food scraps can reduce this waste!",
+            "A single tree can absorb as much as 48 pounds of carbon dioxide per year.",
+            "Plastic bags can take up to 1,000 years to decompose in a landfill.",
+            "Turning off the water while brushing your teeth can save up to 8 gallons of water per day.",
+            "Glass is 100% recyclable and can be recycled endlessly without loss in quality or purity.",
+            "The world produces more than 14 million tons of Styrofoam (polystyrene) each year.",
+            "Planting native wildflowers helps support local bee and butterfly populations.",
+            "Every ton of recycled paper can save 17 trees, 380 gallons of oil, and 7,000 gallons of water.",
+            "An average person generates over 4 pounds of trash every day."
+        ];
+        
+        const locations = [
+            { id: 'park', name: 'Sunny Park', bgColor: 'bg-green-400', icon: '🌳', levels: [1, 3, 4, 6, 8], bgClass: 'game-bg-park' },
+            { id: 'city', name: 'City Block', bgColor: 'bg-gray-500', icon: '🏢', levels: [2, 7, 10], bgClass: 'game-bg-city' },
+            { id: 'beach', name: 'Sandy Beach', bgColor: 'bg-yellow-400', icon: '🏖️', levels: [5, 9], bgClass: 'game-bg-beach' },
+            { id: 'forest', name: 'Whispering Forest', bgColor: 'bg-emerald-600', icon: '🌲', levels: [11, 12], bgClass: 'game-bg-forest' },
+            { id: 'river', name: 'Rapid River', bgColor: 'bg-blue-500', icon: '🏞️', levels: [13, 14], bgClass: 'game-bg-river' },
+            { id: 'mountain', name: 'Mountain Trail', bgColor: 'bg-orange-400', icon: '⛰️', levels: [15, 16], bgClass: 'game-bg-mountain' },
+            { id: 'farm', name: 'Green Farm', bgColor: 'bg-lime-500', icon: '🧑‍🌾', levels: [17, 18], bgClass: 'game-bg-farm' },
+            { id: 'reef', name: 'Coral Reef', bgColor: 'bg-teal-400', icon: '🐠', levels: [19, 20], bgClass: 'game-bg-reef' }
+        ];
+
+        const gameLevels = [
+            {"level": 1, "mission": "Clean the park by sorting the trash!", "items": [{"id": "item1", "emoji": "🍾"}, {"id": "item2", "emoji": "🍌"}, {"id": "item3", "emoji": "📰"}], "actions": [{"itemId": "item1", "type": "recycle"}, {"itemId": "item2", "type": "compost"}, {"itemId": "item3", "type": "recycle"}], "points": 10, "hint": "Plastic and paper go in recycling, food scraps in compost!"},
+            {"level": 2, "mission": "Help the city block go green!", "items": [{"id": "item4", "emoji": "🍎"}, {"id": "item5", "emoji": "🥫"}, {"id": "item6", "emoji": "🍬"}], "actions": [{"itemId": "item4", "type": "compost"}, {"itemId": "item5", "type": "recycle"}, {"itemId": "item6", "type": "trash"}], "points": 15, "hint": "Candy wrappers can't be recycled, they go in the trash."},
+            {"level": 3, "mission": "Plant a new tree in the park.", "items": [{"id": "item7", "emoji": "🌳"}], "actions": [{"itemId": "item7", "type": "plant"}], "points": 20, "hint": "Drag the young tree to the empty spot to plant it!"},
+            {"level": 4, "mission": "Clean up after a picnic!", "items": [{"id": "item8", "emoji": "🍯"}, {"id": "item9", "emoji": "🍽️"}, {"id": "item10", "emoji": "🍴"}, {"id": "item11", "emoji": "🥚"}], "actions": [{"itemId": "item8", "type": "recycle"}, {"itemId": "item9", "type": "trash"}, {"itemId": "item10", "type": "trash"}, {"itemId": "item11", "type": "compost"}], "points": 10, "hint": "Dirty paper plates and plastic forks go in the trash."},
+            {"level": 5, "mission": "Make the beach beautiful again.", "items": [{"id": "item12", "emoji": "🛍️"}, {"id": "item13", "emoji": "🍾"}, {"id": "item14", "emoji": "📦"}], "actions": [{"itemId": "item12", "type": "trash"}, {"itemId": "item13", "type": "recycle"}, {"itemId": "item14", "type": "recycle"}], "points": 15, "hint": "Plastic bags can harm sea animals; put them in the trash!"},
+            {"level": 6, "mission": "A thirsty tree needs your help!", "items": [{"id": "item15", "emoji": "💧"}], "actions": [{"itemId": "item15", "type": "water"}], "points": 25, "hint": "Drag the water to the tree to help it grow strong."},
+            {"level": 7, "mission": "City cleanup challenge!", "items": [{"id": "item16", "emoji": "🔋"}, {"id": "item17", "emoji": "🥫"}, {"id": "item18", "emoji": "🍂"}, {"id": "item19", "emoji": "🥤"}], "actions": [{"itemId": "item16", "type": "trash"}, {"itemId": "item17", "type": "recycle"}, {"itemId": "item18", "type": "compost"}, {"itemId": "item19", "type": "trash"}], "points": 15, "hint": "Batteries and styrofoam are special trash items."},
+            {"level": 8, "mission": "Re-plant and tidy the community garden.", "items": [{"id": "item20", "emoji": "🌳"}, {"id": "item21", "emoji": "🥕"}, {"id": "item22", "emoji": "🏺"}], "actions": [{"itemId": "item20", "type": "plant"}, {"itemId": "item21", "type": "compost"}, {"itemId": "item22", "type": "trash"}], "points": 20, "hint": "Broken pottery isn't recyclable or compostable."},
+            {"level": 9, "mission": "Tackle the beach pollution.", "items": [{"id": "item23", "emoji": "🕸️"}, {"id": "item24", "emoji": "🪵"}, {"id": "item25", "emoji": "🧴"}, {"id": "item26", "emoji": "🌿"}], "actions": [{"itemId": "item23", "type": "trash"}, {"itemId": "item24", "type": "compost"}, {"itemId": "item25", "type": "recycle"}, {"itemId": "item26", "type": "compost"}], "points": 15, "hint": "Natural items like driftwood and seaweed can be composted."},
+            {"level": 10, "mission": "Final Challenge: The Ultimate Eco Hero!", "items": [{"id": "item27", "emoji": "🌳"}, {"id": "item28", "emoji": "🔘"}, {"id": "item29", "emoji": "📦"}, {"id": "item30", "emoji": "☕"}, {"id": "item31", "emoji": "💡"}], "actions": [{"itemId": "item27", "type": "plant"}, {"itemId": "item28", "type": "trash"}, {"itemId": "item29", "type": "recycle"}, {"itemId": "item30", "type": "compost"}, {"itemId": "item31", "type": "trash"}], "points": 20, "hint": "You're an expert now! Sort, plant, and clean to save the day!"},
+            {"level": 11, "mission": "Clear the forest path.", "items": [{"id": "item32", "emoji": "🌲"}, {"id": "item33", "emoji": "🍄"}, {"id": "item34", "emoji": "🥤"}], "actions": [{"itemId": "item32", "type": "plant"}, {"itemId": "item33", "type": "compost"}, {"itemId": "item34", "type": "trash"}], "points": 15, "hint": "Plant new trees and compost natural waste."},
+            {"level": 12, "mission": "Help forest critters by cleaning their home.", "items": [{"id": "item35", "emoji": "🥜"}, {"id": "item36", "emoji": "🥫"}, {"id": "item37", "emoji": "🍂"}], "actions": [{"itemId": "item35", "type": "compost"}, {"itemId": "item36", "type": "recycle"}, {"itemId": "item37", "type": "compost"}], "points": 10, "hint": "Even small cans should be recycled to protect animals."},
+            {"level": 13, "mission": "Stop pollution in the river.", "items": [{"id": "item38", "emoji": "🛢️"}, {"id": "item39", "emoji": "🐟"}, {"id": "item40", "emoji": "🍾"}], "actions": [{"itemId": "item38", "type": "trash"}, {"itemId": "item39", "type": "water"}, {"itemId": "item40", "type": "recycle"}], "points": 25, "hint": "Chemical barrels are trash. Help the fish by 'watering' them (returning them to the river)."},
+            {"level": 14, "mission": "Clean the river banks.", "items": [{"id": "item41", "emoji": "轮胎"}, {"id": "item42", "emoji": "🌿"}, {"id": "item43", "emoji": "🛍️"}], "actions": [{"itemId": "item41", "type": "trash"}, {"itemId": "item42", "type": "compost"}, {"itemId": "item43", "type": "trash"}], "points": 15, "hint": "Old tires and plastic bags are dangerous trash near water."},
+            {"level": 15, "mission": "Keep the mountain trail pristine.", "items": [{"id": "item44", "emoji": "🍫"}, {"id": "item45", "emoji": "💧"}, {"id": "item46", "emoji": "🥾"}], "actions": [{"itemId": "item44", "type": "trash"}, {"itemId": "item45", "type": "recycle"}, {"itemId": "item46", "type": "trash"}], "points": 15, "hint": "Pack it in, pack it out! Don't leave wrappers or old gear behind."},
+            {"level": 16, "mission": "Restore a mountain viewpoint.", "items": [{"id": "item47", "emoji": "🌳"}, {"id": "item48", "emoji": "🥫"}, {"id": "item49", "emoji": "📰"}], "actions": [{"itemId": "item47", "type": "plant"}, {"itemId": "item48", "type": "recycle"}, {"itemId": "item49", "type": "recycle"}], "points": 20, "hint": "Planting a tree makes the view even better for the future."},
+            {"level": 17, "mission": "Help out on the farm.", "items": [{"id": "item50", "emoji": "🚜"}, {"id": "item51", "emoji": "🌽"}, {"id": "item52", "emoji": "🌻"}], "actions": [{"itemId": "item50", "type": "trash"}, {"itemId": "item51", "type": "compost"}, {"itemId": "item52", "type": "plant"}], "points": 15, "hint": "Old tractor parts are trash, but corn cobs are great for compost!"},
+            {"level": 18, "mission": "Sort the barn's storage.", "items": [{"id": "item53", "emoji": "📦"}, {"id": "item54", "emoji": "🍎"}, {"id": "item55", "emoji": "🛠️"}], "actions": [{"itemId": "item53", "type": "recycle"}, {"itemId": "item54", "type": "compost"}, {"itemId": "item55", "type": "trash"}], "points": 10, "hint": "Broken tools are trash, but cardboard can be recycled."},
+            {"level": 19, "mission": "Clean the coral reef.", "items": [{"id": "item56", "emoji": "🕸️"}, {"id": "item57", "emoji": "🐢"}, {"id": "item58", "emoji": "🧴"}], "actions": [{"itemId": "item56", "type": "trash"}, {"itemId": "item57", "type": "water"}, {"itemId": "item58", "type": "recycle"}], "points": 25, "hint": "Fishing nets are trash. Help the turtle back to the sea ('water')."},
+            {"level": 20, "mission": "Protect marine life.", "items": [{"id": "item59", "emoji": "🛍️"}, {"id": "item60", "emoji": "🦀"}, {"id": "item61", "emoji": "🐚"}], "actions": [{"itemId": "item59", "type": "trash"}, {"itemId": "item60", "type": "water"}, {"itemId": "item61", "type": "compost"}], "points": 20, "hint": "Plastic bags are trash. Help the crab and put shells in compost."},
+        ];
+
+        function populateLocations() {
+            locationGrid.innerHTML = '';
+            locations.forEach(loc => {
+                const locCard = document.createElement('div');
+                locCard.className = `p-4 h-28 flex flex-col items-center justify-center rounded-lg cursor-pointer transition-transform transform hover:scale-105 text-white shadow-lg ${loc.bgColor}`;
+                locCard.innerHTML = `
+                    <div class="text-4xl">${loc.icon}</div>
+                    <h3 class="text-lg font-bold mt-2">${loc.name}</h3>
+                `;
+                locCard.addEventListener('click', () => startGameForLocation(loc.id));
+                locationGrid.appendChild(locCard);
+            });
+        }
+        
+        function startGameForLocation(locationId) {
+            const locationData = locations.find(l => l.id === locationId);
+            selectedLocationLevels = locationData.levels.map(levelId => gameLevels.find(gl => gl.level === levelId));
+            
+            gameArea.className = `relative w-full flex-grow bg-cover bg-center rounded-lg overflow-hidden ${locationData.bgClass}`;
+
+            currentLevelIndex = 0;
+            score = 0;
+            scoreDisplay.textContent = score;
+
+            locationScreen.classList.add('hidden');
+            gameContainer.classList.remove('hidden');
+            gameContainer.classList.add('flex', 'flex-col');
+            
+            loadLevel(currentLevelIndex);
+        }
+
+        function loadLevel(levelIndex) {
+            currentLevelData = selectedLocationLevels[levelIndex];
+            if (!currentLevelData) {
+                showLocationComplete();
+                return;
+            }
+
+            completedItems = 0;
+            itemsToComplete = currentLevelData.items.length;
+            gameArea.innerHTML = '';
+            interactionArea.innerHTML = '';
+            modal.classList.add('hidden');
+            
+            levelDisplay.textContent = `${currentLevelIndex + 1}/${selectedLocationLevels.length}`;
+            missionDescription.textContent = currentLevelData.mission;
+            levelHint.textContent = `Hint: ${currentLevelData.hint}`;
+            
+            currentLevelData.items.forEach(item => createItem(item));
+            
+            const uniqueActions = [...new Set(currentLevelData.actions.map(a => a.type))];
+            uniqueActions.forEach(actionType => createInteractionTarget(actionType));
+        }
+
+        function createItem(itemData) {
+            const itemEl = document.createElement('div');
+            itemEl.id = itemData.id;
+            itemEl.className = 'game-item absolute w-16 h-16 flex items-center justify-center text-4xl';
+            itemEl.textContent = itemData.emoji;
+            itemEl.style.left = `${Math.random() * 85}%`;
+            itemEl.style.top = `${Math.random() * 75}%`;
+            itemEl.draggable = true;
+            gameArea.appendChild(itemEl);
+            itemEl.addEventListener('dragstart', handleDragStart);
+        }
+        
+        function createInteractionTarget(type) {
+            const targetEl = document.createElement('div');
+            let emoji = '', text = '';
+            switch(type) {
+                case 'recycle': emoji = '♻️'; text = 'Recycle'; break;
+                case 'compost': emoji = '🌿'; text = 'Compost'; break;
+                case 'trash': emoji = '🗑️'; text = 'Trash'; break;
+                case 'plant': emoji = '🌱'; text = 'Plant Here'; break;
+                case 'water': emoji = '💧'; text = 'To Water'; break;
+            }
+            targetEl.className = 'bin w-16 h-16 sm:w-20 sm:h-20 bg-green-200 rounded-lg flex flex-col items-center justify-center text-center p-1';
+            targetEl.innerHTML = `<div class="text-2xl sm:text-3xl">${emoji}</div><div class="text-[10px] sm:text-xs font-semibold mt-1">${text}</div>`;
+            targetEl.dataset.type = type;
+            targetEl.addEventListener('dragover', handleDragOver);
+            targetEl.addEventListener('dragleave', handleDragLeave);
+            targetEl.addEventListener('drop', handleDrop);
+            interactionArea.appendChild(targetEl);
+        }
+
+        function handleDragStart(e) {
+            draggedItem = e.target;
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.target.closest('.bin').classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.target.closest('.bin').classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const dropZone = e.target.closest('.bin');
+            dropZone.classList.remove('drag-over');
+            if (!draggedItem) return;
+
+            const expectedAction = currentLevelData.actions.find(a => a.itemId === draggedItem.id);
+
+            if (dropZone.dataset.type === expectedAction.type) {
+                updateScore(currentLevelData.points);
+                showFeedback(draggedItem, '✅', 'green');
+                draggedItem.remove();
+                completedItems++;
+                checkLevelCompletion();
+            } else {
+                showFeedback(draggedItem, '❌', 'red');
+            }
+            draggedItem = null;
+        }
+        
+        function updateScore(points) {
+            score += points;
+            scoreDisplay.textContent = score;
+        }
+
+        function showFeedback(element, emoji, color) {
+            const feedbackEl = document.createElement('div');
+            feedbackEl.className = `feedback absolute text-3xl`;
+            feedbackEl.style.color = color;
+            feedbackEl.textContent = emoji;
+            const rect = element.getBoundingClientRect();
+            const gameAreaRect = gameArea.getBoundingClientRect();
+            feedbackEl.style.left = `${rect.left - gameAreaRect.left}px`;
+            feedbackEl.style.top = `${rect.top - gameAreaRect.top}px`;
+            gameArea.appendChild(feedbackEl);
+            setTimeout(() => feedbackEl.remove(), 2000);
+        }
+
+        function showEcoFact() {
+            const randomFact = ecoFacts[Math.floor(Math.random() * ecoFacts.length)];
+            ecoFact.textContent = randomFact;
+            ecoFactContainer.classList.remove('hidden');
+        }
+
+        function checkLevelCompletion() {
+            if (completedItems === itemsToComplete) {
+                setTimeout(() => {
+                    currentLevelIndex++;
+                    if (currentLevelIndex < selectedLocationLevels.length) {
+                        modalTitle.textContent = 'Level Complete!';
+                        modalMessage.innerHTML = `Great job, Eco Hero! Your score is <span class="font-bold text-yellow-500">${score}</span>.`;
+                        nextLevelBtn.textContent = 'Next Mission';
+                        nextLevelBtn.onclick = () => loadLevel(currentLevelIndex);
+                        showEcoFact();
+                        modal.classList.remove('hidden');
+                    } else {
+                        showLocationComplete();
+                    }
+                }, 500);
+            }
+        }
+        
+        function showLocationComplete() {
+            modalTitle.textContent = 'Location Complete!';
+            modalMessage.textContent = `You cleared the whole area! A true Eco Hero! Your final score for this area is ${score}.`;
+            nextLevelBtn.textContent = 'Back to World Map';
+            nextLevelBtn.onclick = returnToMap;
+            showEcoFact();
+            modal.classList.remove('hidden');
+        }
+
+        function gameOver(message) {
+            modalTitle.textContent = 'Game Over';
+            modalMessage.textContent = `${message} Your final score is ${score}.`;
+            nextLevelBtn.textContent = 'Try Again';
+            nextLevelBtn.onclick = () => {
+                score = 0;
+                scoreDisplay.textContent = score;
+                loadLevel(currentLevelIndex); 
+            };
+            ecoFactContainer.classList.add('hidden');
+            modal.classList.remove('hidden');
+        }
+        
+        function returnToMap() {
+            gameContainer.classList.add('hidden');
+            gameContainer.classList.remove('flex', 'flex-col');
+            locationScreen.classList.remove('hidden');
+            modal.classList.add('hidden');
+        }
+
+        nextLevelBtn.addEventListener('click', () => {
+             modal.classList.add('hidden');
+        });
+        backToMapBtn.addEventListener('click', returnToMap);
+        rulesBtn.addEventListener('click', () => {
+            rulesModal.classList.remove('hidden');
+        });
+        closeRulesBtn.addEventListener('click', () => {
+            rulesModal.classList.add('hidden');
+        });
+
+        document.addEventListener('DOMContentLoaded', populateLocations);
+    </script>
+</body>
+</html>
+

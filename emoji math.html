@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoji Math Challenge</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #fffbeb; /* Light Yellow */
+            --primary-color: #f97316; /* Orange */
+            --secondary-color: #84cc16; /* Lime */
+            --text-color: #3f3f46; /* Dark Zinc */
+            --card-bg: #ffffff;
+            --correct-bg: #dcfce7;
+            --correct-border: #22c55e;
+            --incorrect-bg: #fee2e2;
+            --incorrect-border: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-family: 'Fredoka One', cursive;
+            color: var(--primary-color);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 0;
+        }
+        
+        #rules-container {
+            font-size: 1rem;
+            color: #71717a; /* Zinc 500 */
+            margin-bottom: 1rem;
+            padding: 0 1rem;
+        }
+
+        #game-container {
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+        }
+
+        #game-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #fef3c7;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        #score-container, #level-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        #score, #level {
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+
+        #question-container {
+            font-size: clamp(2.5rem, 10vw, 3.5rem); /* Responsive font size */
+            padding: 2rem 1rem;
+            background-color: #fafafa;
+            border-radius: 12px;
+            display: flex;
+            flex-wrap: wrap; /* Allow wrapping for many emojis */
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            min-height: 100px;
+            user-select: none;
+            word-break: break-all;
+        }
+        
+        #question-container span {
+            font-family: 'Fredoka One', cursive;
+            color: #57534e;
+        }
+
+        #options-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .option-btn {
+            font-family: 'Fredoka One', cursive;
+            font-size: 2.5rem;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 3px solid #e7e5e4;
+            background-color: #f5f5f4;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+        }
+
+        .option-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            border-color: var(--primary-color);
+        }
+        
+        .option-btn.correct {
+            background-color: var(--correct-bg);
+            border-color: var(--correct-border);
+            color: var(--correct-border);
+            transform: scale(1.05);
+        }
+
+        .option-btn.incorrect {
+            background-color: var(--incorrect-bg);
+            border-color: var(--incorrect-border);
+            color: var(--incorrect-border);
+        }
+        
+        .option-btn.disabled {
+            pointer-events: none;
+            opacity: 0.8;
+        }
+
+        #feedback-message {
+            font-size: 1.5rem;
+            font-weight: 600;
+            min-height: 2.25rem; /* Reserve space */
+        }
+        
+        #feedback-message.correct-text {
+            color: var(--correct-border);
+        }
+        #feedback-message.incorrect-text {
+            color: var(--incorrect-border);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            body {
+                padding: 0.5rem;
+            }
+            h1 { 
+                font-size: 2rem; 
+            }
+            #game-container { 
+                padding: 1.5rem 1rem;
+                gap: 1rem;
+            }
+            #game-info { 
+                font-size: 1rem; 
+                padding: 0.75rem 1rem;
+            }
+            .option-btn { 
+                font-size: 2rem; 
+                padding: 1rem; 
+            }
+             #options-container {
+                gap: 0.75rem;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <h1>Emoji Math Challenge</h1>
+        <div id="rules-container">
+            Count the emojis, solve the problem, and click the correct answer!
+        </div>
+
+        <div id="game-info">
+            <div id="score-container">
+                <span>Score:</span>
+                <span id="score">0</span>
+            </div>
+            <div id="level-container">
+                <span>Level:</span>
+                <span id="level">1</span>
+            </div>
+        </div>
+
+        <div id="question-container"></div>
+        <div id="options-container"></div>
+        <div id="feedback-message"></div>
+    </div>
+
+    <script>
+        // --- EMOJI DATA ---
+        const EMOJIS = ['🍎', '🚀', '⭐', '🎈', '🍕', '🚗', '🎸', '⚽', '🤖', '👑'];
+
+        // --- DOM Element References ---
+        const scoreEl = document.getElementById('score');
+        const levelEl = document.getElementById('level');
+        const questionContainer = document.getElementById('question-container');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackMessage = document.getElementById('feedback-message');
+
+        // --- Game State Variables ---
+        let score = 0;
+        let level = 1;
+        let correctAnswer = 0;
+        let currentEmoji = '';
+
+        // --- UTILITY FUNCTIONS ---
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+        
+        // --- GAME LOGIC ---
+
+        /**
+         * Generates and displays a new math question.
+         */
+        function generateQuestion() {
+            // Clear previous state
+            optionsContainer.innerHTML = '';
+            feedbackMessage.textContent = '';
+            feedbackMessage.className = 'feedback-message';
+
+            // Pick a random emoji for this round
+            currentEmoji = EMOJIS[getRandomInt(0, EMOJIS.length - 1)];
+
+            // Determine available operations based on level (faster progression)
+            let availableOps = ['addition'];
+            if (level >= 3) availableOps.push('subtraction');
+            if (level >= 5) availableOps.push('multiplication');
+            const operation = availableOps[getRandomInt(0, availableOps.length - 1)];
+
+            let num1, num2, questionHTML;
+
+            switch (operation) {
+                case 'subtraction':
+                    const maxSubNumber = level * 2 + 2;
+                    num1 = getRandomInt(1, maxSubNumber);
+                    num2 = getRandomInt(1, num1); // Ensure result is not negative
+                    correctAnswer = num1 - num2;
+                    questionHTML = `${currentEmoji.repeat(num1)} <span>-</span> ${currentEmoji.repeat(num2)} <span>= ?</span>`;
+                    break;
+
+                case 'multiplication':
+                    const maxMulNumber = Math.floor(level / 2) + 1; // Keep multiplication numbers small
+                    num1 = getRandomInt(1, maxMulNumber > 5 ? 5 : maxMulNumber);
+                    num2 = getRandomInt(1, maxMulNumber > 4 ? 4 : maxMulNumber);
+                    correctAnswer = num1 * num2;
+                    questionHTML = `${currentEmoji.repeat(num1)} <span>×</span> ${currentEmoji.repeat(num2)} <span>= ?</span>`;
+                    break;
+                
+                case 'addition':
+                default:
+                    const maxAddNumber = level * 2 + 2;
+                    num1 = getRandomInt(1, maxAddNumber);
+                    num2 = getRandomInt(1, maxAddNumber);
+                    correctAnswer = num1 + num2;
+                    questionHTML = `${currentEmoji.repeat(num1)} <span>+</span> ${currentEmoji.repeat(num2)} <span>= ?</span>`;
+                    break;
+            }
+            
+            questionContainer.innerHTML = questionHTML;
+            
+            // Generate answer options
+            const options = generateOptions(correctAnswer);
+
+            // Create and display option buttons
+            options.forEach(option => {
+                const button = document.createElement('button');
+                button.classList.add('option-btn');
+                button.textContent = option;
+                button.addEventListener('click', handleAnswerClick);
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        /**
+         * Generates an array of answer options, including the correct one.
+         */
+        function generateOptions(correctAnswer) {
+            const options = new Set([correctAnswer]);
+            while (options.size < 4) {
+                const randomOffset = getRandomInt(-5, 5);
+                if (randomOffset === 0) continue; // Ensure distractors are different
+                const distractor = correctAnswer + randomOffset;
+                if (distractor >= 0) { // Ensure answers aren't negative
+                    options.add(distractor);
+                }
+            }
+            return shuffleArray([...options]);
+        }
+
+        /**
+         * Handles the click event on an answer button.
+         */
+        function handleAnswerClick() {
+            const selectedAnswer = parseInt(this.textContent);
+            
+            // Disable all buttons after an answer is chosen
+            const allButtons = optionsContainer.querySelectorAll('.option-btn');
+            allButtons.forEach(btn => btn.classList.add('disabled'));
+
+            if (selectedAnswer === correctAnswer) {
+                // Correct Answer
+                this.classList.add('correct');
+                feedbackMessage.textContent = 'Correct! 🎉';
+                feedbackMessage.classList.add('correct-text');
+                score++;
+                // Level up every 3 correct answers
+                if (score > 0 && score % 3 === 0) { 
+                    level++;
+                }
+            } else {
+                // Incorrect Answer
+                this.classList.add('incorrect');
+                feedbackMessage.textContent = `Nice try! The answer was ${correctAnswer}.`;
+                feedbackMessage.classList.add('incorrect-text');
+                // Highlight the correct answer for learning
+                allButtons.forEach(btn => {
+                    if (parseInt(btn.textContent) === correctAnswer) {
+                        btn.classList.add('correct');
+                    }
+                });
+            }
+
+            // Update score and level display
+            scoreEl.textContent = score;
+            levelEl.textContent = level;
+
+            // Load the next question after a short delay
+            setTimeout(generateQuestion, 2000);
+        }
+
+        // --- INITIALIZE GAME ---
+        document.addEventListener('DOMContentLoaded', () => {
+            generateQuestion();
+        });
+    </script>
+</body>
+</html>
+

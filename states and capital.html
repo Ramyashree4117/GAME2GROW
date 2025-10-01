@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learn States and Capitals of India</title>
+    <style>
+        body {
+            background: linear-gradient(to bottom right, #ff9933, #ffffff, #138808);
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .letter, .input-letter {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 1px solid black;
+            text-align: center;
+            line-height: 40px;
+            margin: 5px;
+            font-size: 20px;
+            background-color: #f0f0f0;
+        }
+        .input-letter {
+            background-color: #d0eaff;
+        }
+        #puzzle, #input-display {
+            margin-bottom: 20px;
+        }
+        #result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        #input-display {
+            border: 2px solid blue;
+            padding: 10px;
+            min-height: 50px;
+            display: inline-block;
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+        #input-display.empty::before {
+            content: 'Type here (letters appear as squares)';
+            color: #888;
+        }
+        .cylinder {
+            display: inline-block;
+            background: linear-gradient(to right, #e0e0e0, #ffffff, #e0e0e0);
+            color: green;
+            font-weight: bold;
+            padding: 10px 20px;
+            border-radius: 50px;
+            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.3), 
+                        -5px -5px 10px rgba(255, 255, 255, 0.8);
+            border: 1px solid #ccc;
+        }
+        h1 {
+            color: #333;
+        }
+        p {
+            color: #444;
+        }
+        button {
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Learn States and Capitals of India</h1>
+    <p>Unscramble the letters to guess the Indian state name. Type letters directly to fill the blue-bordered area below (use space for multi-word names). Press Enter to submit, Backspace to delete.</p>
+    <div id="puzzle"></div>
+    <div id="input-display" class="empty"></div>
+    <button onclick="checkGuess()">Submit Guess</button>
+    <div id="result"></div>
+    <button id="next" onclick="loadPuzzle()" style="display: none; margin-top: 10px;">Next Puzzle</button>
+
+    <script>
+        const states = [
+            { name: "Andhra Pradesh", capital: "Amaravati", famous: "Tirumala Venkateswara Temple, Araku Valley" },
+            { name: "Arunachal Pradesh", capital: "Itanagar", famous: "Tawang Monastery, Parashurama Kund" },
+            { name: "Assam", capital: "Dispur", famous: "Kaziranga National Park, Kamakhya Temple" },
+            { name: "Bihar", capital: "Patna", famous: "Mahabodhi Temple, Nalanda" },
+            { name: "Chhattisgarh", capital: "Raipur", famous: "Chitrakote Falls, Bhoramdeo Temple" },
+            { name: "Goa", capital: "Panaji", famous: "Basilica of Bom Jesus, Anjuna Beach" },
+            { name: "Gujarat", capital: "Gandhinagar", famous: "Statue of Unity, Rani ki Vav" },
+            { name: "Haryana", capital: "Chandigarh", famous: "Kurukshetra, Sultanpur National Park" },
+            { name: "Himachal Pradesh", capital: "Shimla", famous: "Shimla, Dharamshala" },
+            { name: "Jharkhand", capital: "Ranchi", famous: "Baidyanath Temple, Shikharji" },
+            { name: "Karnataka", capital: "Bengaluru", famous: "Group of Monuments at Hampi, Jog Falls" },
+            { name: "Kerala", capital: "Thiruvananthapuram", famous: "Munnar, Kovalam Beach" },
+            { name: "Madhya Pradesh", capital: "Bhopal", famous: "Khajuraho Group of Monuments, Kanha Tiger Reserve" },
+            { name: "Maharashtra", capital: "Mumbai", famous: "Ajanta Caves, Elephanta Caves" },
+            { name: "Manipur", capital: "Imphal", famous: "Loktak Lake, Keibul Lamjao National Park" },
+            { name: "Meghalaya", capital: "Shillong", famous: "Living root bridges, Nokrek National Park" },
+            { name: "Mizoram", capital: "Aizawl", famous: "Dampa Tiger Reserve, Kawtchhuah Ropui" },
+            { name: "Nagaland", capital: "Kohima", famous: "Hornbill Festival, Dzukou Valley" },
+            { name: "Odisha", capital: "Bhubaneswar", famous: "Konark Sun Temple, Chilika Lake" },
+            { name: "Punjab", capital: "Chandigarh", famous: "Sri Harmandir Sahib, Jallianwala Bagh" },
+            { name: "Rajasthan", capital: "Jaipur", famous: "Amber Fort, Mehrangarh Fort" },
+            { name: "Sikkim", capital: "Gangtok", famous: "Rumtek Monastery, Gurudongmar Lake" },
+            { name: "Tamil Nadu", capital: "Chennai", famous: "Shore Temple, Brihadeeswarar Temple" },
+            { name: "Telangana", capital: "Hyderabad", famous: "Charminar, Ramappa Temple" },
+            { name: "Tripura", capital: "Agartala", famous: "Ujjayanta Palace, Unakoti" },
+            { name: "Uttar Pradesh", capital: "Lucknow", famous: "Taj Mahal, Kashi Vishwanath Temple" },
+            { name: "Uttarakhand", capital: "Dehradun", famous: "Nanda Devi and Valley of Flowers National Parks, Badrinath" },
+            { name: "West Bengal", capital: "Kolkata", famous: "Sundarbans National Park, Victoria Memorial" }
+        ];
+
+        let currentState;
+        let userInput = [];
+
+        function scramble(word) {
+            const clean = word.replace(/\s/g, '').split('');
+            for (let i = clean.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [clean[i], clean[j]] = [clean[j], clean[i]];
+            }
+            return clean;
+        }
+
+        function loadPuzzle() {
+            document.getElementById('result').innerHTML = '';
+            userInput = [];
+            document.getElementById('input-display').innerHTML = '';
+            document.getElementById('input-display').classList.add('empty');
+            document.getElementById('next').style.display = 'none';
+
+            currentState = states[Math.floor(Math.random() * states.length)];
+            const letters = scramble(currentState.name);
+            let html = '';
+            letters.forEach(letter => {
+                html += `<div class="letter">${letter.toUpperCase()}</div>`;
+            });
+            document.getElementById('puzzle').innerHTML = html;
+        }
+
+        function displayInput() {
+            let html = '';
+            if (userInput.length === 0) {
+                document.getElementById('input-display').classList.add('empty');
+            } else {
+                document.getElementById('input-display').classList.remove('empty');
+                userInput.forEach(char => {
+                    html += `<div class="input-letter">${char.toUpperCase()}</div>`;
+                });
+            }
+            document.getElementById('input-display').innerHTML = html;
+        }
+
+        function checkGuess() {
+            const input = userInput.join('').replace(/\s/g, '').toLowerCase();
+            const correct = currentState.name.replace(/\s/g, '').toLowerCase();
+            if (input === correct) {
+                document.getElementById('result').innerHTML = `Correct! The state is ${currentState.name}.<br>Capital: <span class="cylinder">${currentState.capital}</span><br>Famous for: ${currentState.famous}`;
+                document.getElementById('next').style.display = 'block';
+            } else {
+                document.getElementById('result').innerHTML = 'Wrong, try again!';
+            }
+        }
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                checkGuess();
+            } else if (event.key === 'Backspace') {
+                userInput.pop();
+                displayInput();
+            } else if (event.key.length === 1 && /[a-zA-Z ]/.test(event.key) && userInput.length < 30) {
+                userInput.push(event.key);
+                displayInput();
+            }
+            event.preventDefault();
+        });
+
+        window.onload = loadPuzzle;
+    </script>
+</body>
+</html>

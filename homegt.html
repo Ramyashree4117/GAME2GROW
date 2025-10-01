@@ -1,0 +1,1722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GamiLearn - Play. Learn. Grow.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/lucide.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Define custom fonts */
+        body {
+            font-family: 'Poppins', sans-serif;
+            scroll-behavior: smooth;
+        }
+        .font-nunito {
+            font-family: 'Nunito', sans-serif;
+        }
+        /* Custom animation for floating effect */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+        .floating-delay-1 { animation-delay: 1s; }
+        .floating-delay-2 { animation-delay: 2s; }
+
+        /* Custom styles for glowing buttons and cards */
+        .cta-button-primary {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+        }
+        .age-card, .account-type-card, .avatar-option, .welcome-option, .challenge-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            cursor: pointer;
+        }
+        .age-card:hover, .account-type-card:hover, .avatar-option:hover, .welcome-option:hover, .challenge-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+        .age-card.selected, .account-type-card.selected, .avatar-option.selected {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 25px -5px rgb(59 130 246 / 0.2), 0 8px 10px -6px rgb(59 130 246 / 0.2);
+            border-color: #3B82F6; /* blue-500 */
+        }
+        .game-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .game-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 25px -5px rgb(0 0 0 / 0.1);
+        }
+        .progress-bar-fill {
+            transition: width 0.5s ease-in-out;
+        }
+        /* Modal Styles */
+        .modal {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .modal-content {
+             transition: transform 0.3s ease-in-out;
+        }
+        .onboarding-step {
+            display: none;
+        }
+        .onboarding-step.active {
+            display: block;
+        }
+        /* Hide file input visually but keep it accessible */
+        #avatar-upload-input {
+            width: 0.1px;
+            height: 0.1px;
+            opacity: 0;
+            overflow: hidden;
+            position: absolute;
+            z-index: -1;
+        }
+        /* Back and Close Button Styles */
+        .modal-control-button {
+            position: absolute;
+            top: 1rem;
+            color: #9CA3AF; /* gray-400 */
+            padding: 0.5rem;
+            border-radius: 9999px;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            z-index: 10;
+        }
+        .modal-control-button:hover {
+            background-color: #F3F4F6; /* gray-100 */
+            color: #374151; /* gray-700 */
+        }
+        .modal-back-button {
+            left: 1rem;
+        }
+        .modal-close-button {
+            right: 1rem;
+        }
+        /* Dashboard view management */
+        .dashboard-view {
+            display: none;
+        }
+        .dashboard-view.active {
+            display: block;
+        }
+        /* Mobile Nav active state */
+        #mobile-dashboard-nav .nav-item.active {
+            color: #3B82F6; /* blue-500 */
+        }
+        #mobile-dashboard-nav .nav-item.active .nav-text {
+            font-weight: 600;
+        }
+        /* XP Animation */
+        @keyframes xp-pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .xp-animate {
+            animation: xp-pulse 0.5s ease-out;
+        }
+        /* Typing indicator for chatbot */
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            float: left;
+            margin: 0 1px;
+            background-color: #9E9EA1;
+            display: block;
+            border-radius: 50%;
+            opacity: 0.4;
+            animation: loader 1s infinite ease-in-out;
+        }
+        @keyframes loader {
+            0% { transform: scale(0); }
+            50% { transform: scale(1); }
+            100% { transform: scale(0); }
+        }
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        /* Upload Section Styles - centered and consistent */
+        #upload-section .bg-gray-50 {
+            border: 1px solid #e5e7eb;
+        }
+        /* Center the upload form and limit its width */
+        #photo-upload-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            max-width: 720px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        /* Square clickable avatar/preview area */
+        #photo-upload-form label[for="photo-upload"] {
+            width: 100%;
+            max-width: 640px; /* horizontal rectangle */
+            height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.75rem;
+            background: #ebf8ff;
+            color: #2563eb;
+            border: 2px dashed #bfdbfe;
+            cursor: pointer;
+            margin-bottom: 0.5rem;
+        }
+        /* Hidden native file input (kept for accessibility) */
+        #photo-upload { display: none; }
+        #photo-filename { font-size: 0.9rem; color: #6b7280; margin-bottom: 0.5rem; }
+        /* Ensure textarea stretches to form width */
+        #photo-upload-form textarea { width: 100%; }
+        #photo-upload-form label[for="photo-upload"]:hover {
+            background-color: #dbeafe;
+            border-color: #3b82f6;
+            color: #2563eb;
+        }
+        #photo-upload-form textarea:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px #bfdbfe;
+        }
+        #photo-upload-form button:active {
+            transform: scale(0.98);
+        }
+        /* Make sure footer stays at bottom */
+        #main-footer {
+            left: 0;
+            right: 0;
+        }
+        body, html, #app-container {
+            min-height: 100vh;
+            height: 100%;
+        }
+        #app-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            height: 100%;
+            padding-bottom: 0; /* Remove space for fixed footer */
+        }
+        main, #landing-page, #dashboard-page {
+            flex: 1 0 auto;
+        }
+        #main-footer {
+            flex-shrink: 0;
+            position: static !important; /* Remove fixed positioning */
+            bottom: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+        }
+        @media (max-width: 640px) {
+            #main-footer {
+                padding-bottom: 60px;
+            }
+        }
+    </style>
+    
+    <style>
+        /* Google Translate Styling */
+        #google_translate_element, #google_translate_element_mobile {
+            display: inline-block !important;
+            position: relative;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        .goog-te-gadget {
+            font-family: 'Poppins', sans-serif !important;
+            font-size: 0.875rem !important;
+            display: inline-block !important;
+        }
+        
+        .goog-te-gadget-simple {
+            background-color: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 0.5rem !important;
+            padding: 0.5rem 0.75rem !important;
+            font-size: 0.875rem !important;
+            color: #374151 !important;
+            transition: all 0.2s ease !important;
+            min-width: 120px !important;
+            display: inline-block !important;
+            visibility: visible !important;
+        }
+        
+        .goog-te-gadget-simple:hover {
+            border-color: #3b82f6 !important;
+            background-color: #eff6ff !important;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        .goog-te-gadget-simple:focus {
+            outline: none !important;
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+        }
+        
+        /* Style the dropdown arrow */
+        .goog-te-gadget-simple .goog-te-combo {
+            background-color: transparent !important;
+            border: none !important;
+            color: #374151 !important;
+            font-size: 0.875rem !important;
+            font-family: 'Poppins', sans-serif !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 100% !important;
+        }
+        
+        /* Hide Google Translate branding */
+        .goog-te-gadget .goog-te-combo {
+            margin: 0 !important;
+        }
+        
+        .goog-te-banner-frame {
+            display: none !important;
+        }
+        
+        /* Remove Google Translate top bar */
+        .goog-te-banner-frame.skiptranslate {
+            display: none !important;
+        }
+        
+        body {
+            top: 0 !important;
+        }
+        
+        /* Language selector styling */
+        .goog-te-menu-value {
+            color: #374151 !important;
+        }
+        
+        .goog-te-menu-value span:first-child {
+            color: #374151 !important;
+        }
+        
+        /* Mobile translate styling */
+        #google_translate_element_mobile {
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+        
+        #google_translate_element_mobile .goog-te-gadget-simple {
+            width: 100% !important;
+            text-align: center !important;
+        }
+    </style>
+<body class="bg-gray-50 text-gray-800">
+
+    <div id="app-container">
+        <!-- 1. Top Navigation Bar -->
+        <header id="main-header" class="bg-white/80 backdrop-blur-lg fixed top-0 left-0 right-0 z-50 shadow-sm">
+            <nav class="container mx-auto px-6 py-3">
+                <div class="flex justify-between items-center">
+                    <a href="#" class="flex items-center space-x-2">
+                        <div class="bg-blue-500 p-2 rounded-lg">
+                            <i data-lucide="gamepad-2" class="text-white"></i>
+                        </div>
+                        <span class="text-2xl font-bold font-nunito text-blue-600">GamiLearn</span>
+                    </a>
+                    <div class="hidden md:flex items-center space-x-8">
+                        <a href="#about" class="text-gray-600 hover:text-blue-500">About</a>
+                        <a href="#games" class="text-gray-600 hover:text-blue-500">Games</a>
+                        <a href="#leaderboard" class="text-gray-600 hover:text-blue-500">Leaderboard</a>
+                        <a href="doubt_center.html" class="text-gray-600 hover:text-blue-500">Doubts</a>
+                    </div>
+                    <div class="hidden md:flex items-center space-x-4">
+                        <div class="flex items-center ml-4">
+                            <i data-lucide="globe" class="h-4 w-4 text-gray-500 mr-2"></i>
+                            <div id="google_translate_element"></div>
+                        </div>
+                        <a href="#" id="login-btn-nav" class="text-gray-600 font-semibold hover:text-blue-500">Login</a>
+                        <a href="#" id="register-btn-nav" class="bg-blue-500 text-white font-semibold px-5 py-2 rounded-full hover:bg-blue-600 transition-colors">Register</a>
+                    </div>
+                    <!-- Mobile Menu Button -->
+                    <button id="mobile-menu-button" class="md:hidden p-2 rounded-md hover:bg-gray-100">
+                        <i data-lucide="menu" class="h-6 w-6"></i>
+                    </button>
+                </div>
+                <!-- Mobile Menu -->
+                <div id="mobile-menu" class="hidden md:hidden mt-4">
+                    <a href="#about" class="block py-2 text-gray-600 hover:text-blue-500">About</a>
+                    <a href="#games" class="block py-2 text-gray-600 hover:text-blue-500">Games</a>
+                    <a href="subjects.html" class="block py-2 text-gray-600 hover:text-blue-500">Subjects</a>
+                    <a href="#leaderboard" class="block py-2 text-gray-600 hover:text-blue-500">Leaderboard</a>
+                    <a href="doubt_center.html" class="block py-2 text-gray-600 hover:text-blue-500">Doubts</a>
+                    <div class="mt-4 pt-4 border-t">
+                        <div class="flex items-center justify-center mb-4">
+                            <i data-lucide="globe" class="h-4 w-4 text-gray-500 mr-2"></i>
+                            <div id="google_translate_element_mobile"></div>
+                        </div>
+                        <a href="#" id="login-btn-mobile" class="block w-full text-center py-2 text-gray-600 font-semibold hover:text-blue-500">Login</a>
+                        <a href="#" id="register-btn-mobile" class="block w-full mt-2 text-center bg-blue-500 text-white font-semibold px-5 py-2 rounded-full hover:bg-blue-600 transition-colors">Register</a>
+                    </div>
+                </div>
+            </nav>
+        </header>
+
+        <!-- Main Landing Page Content -->
+        <main id="landing-page">
+            <!-- 2. Hero Section -->
+            <section class="relative pt-32 pb-20 md:pt-40 md:pb-24 overflow-hidden">
+                 <div class="absolute inset-0 bg-gradient-to-b from-blue-50 to-gray-50 -z-10"></div>
+                 <!-- Floating shapes -->
+                 <div class="absolute top-20 -left-10 w-24 h-24 bg-blue-200 rounded-full opacity-30 floating -z-10"></div>
+                 <div class="absolute bottom-10 -right-10 w-32 h-32 bg-green-200 rounded-full opacity-30 floating floating-delay-1 -z-10"></div>
+                 <div class="absolute top-1/2 right-1/4 w-16 h-16 bg-yellow-200 rounded-full opacity-30 floating floating-delay-2 -z-10"></div>
+
+                <div class="container mx-auto px-6 text-center">
+                    <div class="max-w-3xl mx-auto">
+                        <h1 class="text-4xl md:text-6xl font-extrabold font-nunito text-gray-900 leading-tight">Gamified Learning for <span class="text-blue-600">Every Child, Anywhere.</span></h1>
+                        <p class="mt-6 text-lg md:text-xl text-gray-600">Interactive games, fun challenges, and smart learning for students in rural areas.</p>
+                        <div class="mt-10 flex flex-col sm:flex-row justify-center items-center gap-4">
+                            <a href="#" id="start-learning-btn" class="cta-button-primary w-full sm:w-auto bg-blue-500 text-white font-bold px-8 py-4 rounded-full text-lg hover:bg-blue-600 transition-transform transform hover:scale-105">
+                                Start Learning
+                            </a>
+                            <a href="#" id="guest-btn-hero" class="w-full sm:w-auto bg-white text-gray-700 font-bold px-8 py-4 rounded-full text-lg border-2 border-gray-200 hover:bg-gray-100 transition-colors">
+                                Try as Guest
+                            </a>
+                        </div>
+                    </div>
+                    <div class="mt-16 relative">
+                        <img src="https://placehold.co/900x500/EBF8FF/3B82F6?text=Fun+Learning+Illustration" alt="Kids learning with games" class="rounded-2xl shadow-2xl mx-auto floating">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Landing Page sections are unchanged -->
+            <section id="age-groups-landing" class="py-20 bg-white">
+    <div class="container mx-auto px-6">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-4xl font-bold">Choose Your Path</h2>
+            <p class="mt-4 text-gray-600">Select an age group to begin your learning adventure.</p>
+        </div>
+        <div class="grid md:grid-cols-2 gap-8 md:gap-12 px-0 md:px-24">
+            <div class="age-card text-center bg-gray-50 p-8 rounded-2xl border-2 border-gray-200">
+                <div class="inline-block bg-yellow-100 text-yellow-600 p-5 rounded-2xl">
+                    <i data-lucide="blocks" class="h-12 w-12"></i>
+                </div>
+                <h3 class="text-2xl font-bold mt-6">6-8 Years</h3>
+                <p class="text-yellow-600 font-semibold mt-2">Learn by Fun</p>
+                <p class="mt-4 text-gray-500">Basics, alphabets, numbers, colors, and shapes.</p>
+            </div>
+            <div class="age-card text-center bg-gray-50 p-8 rounded-2xl border-2 border-gray-200">
+                <div class="inline-block bg-green-100 text-green-600 p-5 rounded-2xl">
+                    <i data-lucide="atom" class="h-12 w-12"></i>
+                </div>
+                <h3 class="text-2xl font-bold mt-6">10-12 Years</h3>
+                <p class="text-green-600 font-semibold mt-2">Challenge Yourself</p>
+                <p class="mt-4 text-gray-500">Math formulas, science basics, and vocabulary.</p>
+            </div>
+        </div>
+    </div>
+</section>
+            <section id="games" class="py-20">
+                 <div class="container mx-auto px-6">
+                    <div class="text-center mb-12">
+                         <h2 class="text-3xl md:text-4xl font-bold">Everything You Need to Learn</h2>
+                         <p class="mt-4 text-gray-600">A powerful toolkit of features designed for effective learning.</p>
+                    </div>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                         <div class="flex items-start space-x-4">
+                            <div class="bg-blue-100 text-blue-600 p-3 rounded-lg"><i data-lucide="swords"></i></div>
+                            <div><h3 class="font-bold text-lg">Play Fun Games</h3><p class="text-gray-500 mt-1">Snake & Ladder, WordChain, Fruit Ninja, and more.</p></div>
+                         </div>
+                         <div class="flex items-start space-x-4">
+                            <div class="bg-red-100 text-red-600 p-3 rounded-lg"><i data-lucide="award"></i></div>
+                            <div><h3 class="font-bold text-lg">Earn Rewards</h3><p class="text-gray-500 mt-1">Gain XP, unlock badges, and earn certificates.</p></div>
+                         </div>
+                         <div class="flex items-start space-x-4">
+                            <div class="bg-indigo-100 text-indigo-600 p-3 rounded-lg"><i data-lucide="bot"></i></div>
+                            <div><h3 class="font-bold text-lg">✨ Ask Anything</h3><p class="text-gray-500 mt-1">Get instant answers from our smart AI chatbot.</p></div>
+                         </div>
+                         <div class="flex items-start space-x-4">
+                            <div class="bg-green-100 text-green-600 p-3 rounded-lg"><i data-lucide="smartphone"></i></div>
+                            <div><h3 class="font-bold text-lg">Learn Anywhere</h3><p class="text-gray-500 mt-1">Works perfectly on both web and mobile devices.</p></div>
+                         </div>
+                    </div>
+                </div>
+            </section>
+            <section id="about" class="py-20 bg-white">
+                <div class="container mx-auto px-6">
+                    <div class="grid lg:grid-cols-2 gap-12 items-center">
+                        <div>
+                            <h2 class="text-3xl md:text-4xl font-bold">Why GamiLearn Matters</h2>
+                            <p class="mt-4 text-gray-600">Traditional learning can be boring and unengaging for students. We bridge the gap by making education an exciting adventure, especially for rural learners who deserve the best tools.</p>
+                            <div class="mt-8 space-y-4">
+                                <div class="flex items-start">
+                                    <div class="bg-green-100 text-green-600 p-3 rounded-lg mr-4"><i data-lucide="brain-circuit"></i></div>
+                                    <div><h4 class="font-bold text-lg">Smarter Learning</h4><p class="text-gray-500">Our games are designed to improve memory retention and critical thinking skills.</p></div>
+                                </div>
+                                <div class="flex items-start">
+                                    <div class="bg-red-100 text-red-600 p-3 rounded-lg mr-4"><i data-lucide="target"></i></div>
+                                    <div><h4 class="font-bold text-lg">Motivation Through Games</h4><p class="text-gray-500">Rewards, points, and leaderboards keep students motivated to learn consistently.</p></div>
+                                </div>
+                                <div class="flex items-start">
+                                    <div class="bg-blue-100 text-blue-600 p-3 rounded-lg mr-4"><i data-lucide="globe-2"></i></div>
+                                    <div><h4 class="font-bold text-lg">Bridging the Gap</h4><p class="text-gray-500">Providing equal, high-quality learning opportunities for rural and urban students.</p></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="hidden lg:block"><img src="https://placehold.co/600x500/E0F2FE/0EA5E9?text=Impact+Illustration" alt="Students learning happily" class="rounded-2xl shadow-xl"></div>
+                    </div>
+                </div>
+            </section>
+            <section class="bg-gradient-to-r from-blue-500 to-purple-500 py-20 text-white">
+                <div class="container mx-auto px-6 text-center">
+                    <h2 class="text-4xl font-bold">See It in Action!</h2>
+                    <p class="mt-4 text-blue-100 max-w-2xl mx-auto">Play a sample game right now without logging in. Discover how fun learning can be.</p>
+                    <a href="#" id="demo-btn" class="mt-8 inline-block bg-white text-blue-600 font-bold px-8 py-4 rounded-full text-lg transition-transform transform hover:scale-105">⭐ Try a Demo as Guest</a>
+                </div>
+            </section>
+            <section id="leaderboard" class="py-20">
+                <div class="container mx-auto px-6">
+                    <div class="text-center mb-12">
+                         <h2 class="text-3xl md:text-4xl font-bold">Top Learners This Week</h2>
+                         <p class="mt-4 text-gray-600">See who's leading the charge on the learning adventure!</p>
+                    </div>
+                    <div class="max-w-2xl mx-auto space-y-3">
+                        <div class="flex items-center bg-yellow-100 border-2 border-yellow-300 p-4 rounded-xl shadow-lg">
+                            <span class="text-4xl mr-4">🥇</span>
+                            <img src="https://placehold.co/48x48/FDE68A/FBBF24?text=S" class="w-12 h-12 rounded-full border-2 border-yellow-400">
+                            <div class="ml-4 flex-grow"><p class="font-bold text-lg text-yellow-800">Sunita K.</p><p class="text-sm text-yellow-600">12,500 XP</p></div>
+                            <div class="font-nunito font-extrabold text-2xl text-yellow-700">#1</div>
+                        </div>
+                        <div class="flex items-center bg-gray-100 border-2 border-gray-300 p-4 rounded-xl">
+                            <span class="text-4xl mr-4">🥈</span>
+                            <img src="https://placehold.co/48x48/D1D5DB/9CA3AF?text=R" class="w-12 h-12 rounded-full border-2 border-gray-400">
+                            <div class="ml-4 flex-grow"><p class="font-bold text-lg text-gray-800">Ravi M.</p><p class="text-sm text-gray-600">11,800 XP</p></div>
+                             <div class="font-nunito font-extrabold text-2xl text-gray-600">#2</div>
+                        </div>
+                        <div class="flex items-center bg-orange-100 border-2 border-orange-300 p-4 rounded-xl">
+                            <span class="text-4xl mr-4">🥉</span>
+                            <img src="https://placehold.co/48x48/FFEDD5/FB923C?text=P" class="w-12 h-12 rounded-full border-2 border-orange-400">
+                            <div class="ml-4 flex-grow"><p class="font-bold text-lg text-orange-800">Priya S.</p><p class="text-sm text-orange-600">10,500 XP</p></div>
+                             <div class="font-nunito font-extrabold text-2xl text-orange-700">#3</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section class="py-20 bg-blue-50" aria-labelledby="testimonials-heading">
+                <div class="container mx-auto px-6">
+                    <div class="text-center mb-12">
+                        <h2 id="testimonials-heading" class="text-3xl md:text-4xl font-bold">What Our Students Say</h2>
+                        <p class="mt-4 text-gray-600">Real learners, real progress — hear from students who used GamiLearn.</p>
+                    </div>
+
+                    <!-- Testimonials grid -->
+                    <ul class="grid gap-8 md:grid-cols-3 lg:grid-cols-3" role="list">
+                        <li class="bg-white p-6 rounded-2xl shadow-md" aria-labelledby="t-1-name">
+                            <div class="flex items-start">
+                                <img src="https://placehold.co/56x56/C7D2FE/4F46E5?text=A" alt="Aarav avatar" class="w-14 h-14 rounded-full flex-shrink-0">
+                                <div class="ml-4">
+                                    <p id="t-1-name" class="font-bold text-gray-800">Aarav</p>
+                                    <p class="text-xs text-gray-500">Student • Age 12</p>
+                                </div>
+                            </div>
+                            <blockquote class="mt-4 text-gray-700 text-sm leading-relaxed">"I never knew math could be this fun — the games teach concepts through play and helped me finish my homework faster."</blockquote>
+                            <div class="mt-4 flex items-center justify-between">
+                                <div class="text-sm font-semibold text-yellow-600">⭐ Learner Level 2</div>
+                                <div class="text-sm text-gray-500">1,250 XP</div>
+                            </div>
+                        </li>
+
+                        <li class="bg-white p-6 rounded-2xl shadow-md" aria-labelledby="t-2-name">
+                            <div class="flex items-start">
+                                <img src="https://placehold.co/56x56/FECACA/DC2626?text=M" alt="Meena avatar" class="w-14 h-14 rounded-full flex-shrink-0">
+                                <div class="ml-4">
+                                    <p id="t-2-name" class="font-bold text-gray-800">Meena</p>
+                                    <p class="text-xs text-gray-500">Student • Age 15</p>
+                                </div>
+                            </div>
+                            <blockquote class="mt-4 text-gray-700 text-sm leading-relaxed">"The AI explainer is amazing — I ask questions from my science book and get clear answers that help me revise."</blockquote>
+                            <div class="mt-4 flex items-center justify-between">
+                                <div class="text-sm font-semibold text-yellow-600">🏆 Top Achiever</div>
+                                <div class="text-sm text-gray-500">11,800 XP</div>
+                            </div>
+                        </li>
+
+                        <li class="bg-white p-6 rounded-2xl shadow-md" aria-labelledby="t-3-name">
+                            <div class="flex items-start">
+                                <img src="https://placehold.co/56x56/D1FAE5/059669?text=R" alt="Rajesh avatar" class="w-14 h-14 rounded-full flex-shrink-0">
+                                <div class="ml-4">
+                                    <p id="t-3-name" class="font-bold text-gray-800">Rajesh</p>
+                                    <p class="text-xs text-gray-500">Student • Age 11</p>
+                                </div>
+                            </div>
+                            <blockquote class="mt-4 text-gray-700 text-sm leading-relaxed">"Earning badges makes me want to complete more challenges every day — it feels great to see my progress!"</blockquote>
+                            <div class="mt-4 flex items-center justify-between">
+                                <div class="text-sm font-semibold text-yellow-600">🎖️ Badge Collector</div>
+                                <div class="text-sm text-gray-500">10,500 XP</div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+            
+            
+        </main>
+        
+        
+        
+        <!-- DASHBOARD VIEW (Initially Hidden) -->
+        <div id="dashboard-page" class="hidden min-h-screen bg-gray-100 pb-20 md:pb-0">
+            <!-- Dashboard Header -->
+             <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-40 shadow-sm">
+                <div class="container mx-auto px-6 py-3">
+                     <div class="flex justify-between items-center">
+                        <button id="dashboard-back-btn" class="modal-control-button !static !top-auto !left-auto">
+                            <i data-lucide="arrow-left" class="h-6 w-6"></i>
+                        </button>
+                        <div class="flex items-center gap-2">
+                            <img id="dash-avatar-main" src="https://placehold.co/40x40/A5B4FC/4338CA?text=A" alt="User Avatar" class="w-10 h-10 rounded-full border-2 border-white shadow-md">
+                            <div class="hidden sm:block">
+                                 <p id="dash-user-name" class="font-bold text-gray-800">Learner</p>
+                                 <p class="text-xs text-gray-500">Level 1</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4 bg-white p-2 rounded-xl shadow-sm border">
+                            <div class="text-center">
+                                <p class="text-xs font-bold text-yellow-500">XP</p>
+                                <p id="xp-points" class="text-base font-bold">1,250</p>
+                            </div>
+                            <div class="text-center border-l pl-2">
+                                <p class="text-xs font-bold text-red-500">STREAK</p>
+                                <p id="streak-days" class="text-base font-bold">🔥 5</p>
+                            </div>
+                        </div>
+                        <button id="logout-btn" class="hidden md:block bg-white p-2 rounded-full shadow-sm border hover:bg-red-50 text-red-500 transition-colors">
+                            <i data-lucide="log-out" class="h-5 w-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="container mx-auto px-6 py-6">
+                <!-- Guest Mode Banner -->
+                <div id="guest-banner" class="hidden bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-lg mb-6" role="alert">
+                    <div class="flex"><div class="py-1"><i data-lucide="alert-triangle" class="h-6 w-6 text-yellow-500 mr-4"></i></div><div><p class="font-bold">You're in Guest Mode!</p><p class="text-sm">Your progress won't be saved. <a href="#" id="guest-register-link" class="font-semibold underline">Register now</a> to unlock all features and save your achievements.</p></div></div>
+                </div>
+
+                <!-- Main Dashboard Content Area -->
+                <div id="dashboard-main-content">
+                    <!-- Games Hub View -->
+                    <div id="games-view" class="dashboard-view active">
+                         <h1 id="welcome-header" class="text-3xl font-bold font-nunito text-gray-800 mb-2">Good Morning, Learner!</h1>
+                         <p class="text-gray-600 mb-6">Ready to play, learn, and grow today?</p>
+                         <h2 class="text-2xl font-bold mb-6">Your Games</h2>
+                         <div id="games-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+                    </div>
+
+                    <!-- Challenges View -->
+                    <div id="challenges-view" class="dashboard-view">
+                        <h1 class="text-3xl font-bold font-nunito text-gray-800 mb-6">Daily Challenges</h1>
+                        <div class="space-y-4">
+                            <div class="challenge-card bg-white p-5 rounded-lg shadow-sm" data-topic="Math">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h3 class="font-bold text-lg">Complete one Math game</h3>
+                                        <p class="text-sm text-gray-500">Practice your numbers!</p>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="font-semibold text-yellow-500 mr-4">+20 XP</span>
+                                        <button class="complete-challenge-btn bg-gray-200 p-2 rounded-full text-gray-500"><i data-lucide="check" class="h-6 w-6"></i></button>
+                                    </div>
+                                </div>
+                                <div class="story-btn-container hidden mt-4 text-center">
+                                    <button class="generate-story-btn bg-purple-500 text-white font-semibold px-4 py-2 rounded-full text-sm hover:bg-purple-600">✨ Create a Story about it!</button>
+                                </div>
+                            </div>
+                            <div class="challenge-card bg-white p-5 rounded-lg shadow-sm" data-topic="Vocabulary">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h3 class="font-bold text-lg">Finish a WordChain level</h3>
+                                        <p class="text-sm text-gray-500">Expand your vocabulary.</p>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="font-semibold text-yellow-500 mr-4">+25 XP</span>
+                                        <button class="complete-challenge-btn bg-gray-200 p-2 rounded-full text-gray-500"><i data-lucide="check" class="h-6 w-6"></i></button>
+                                    </div>
+                                </div>
+                                <div class="story-btn-container hidden mt-4 text-center">
+                                     <button class="generate-story-btn bg-purple-500 text-white font-semibold px-4 py-2 rounded-full text-sm hover:bg-purple-600">✨ Create a Story about it!</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Leaderboard View -->
+                    <div id="leaderboard-view" class="dashboard-view">
+                         <h1 class="text-3xl font-bold font-nunito text-gray-800 mb-6">Leaderboard</h1>
+                         <div id="leaderboard-container" class="max-w-2xl mx-auto space-y-3">
+                            <!-- Leaderboard will be populated by JS -->
+                         </div>
+                    </div>
+                    
+                    <!-- Chatbot View Stub -->
+                    <div id="chatbot-view" class="dashboard-view">
+                        <div class="mt-8 bg-white text-gray-800 p-8 rounded-2xl shadow-xl text-center">
+                            <i data-lucide="bot" class="h-16 w-16 mx-auto text-indigo-500"></i>
+                            <h2 class="text-3xl font-bold mt-4">✨ AI Explainer</h2>
+                            <p class="mt-2 text-gray-600">Have a question about a school subject? Our AI tutor can explain anything. Just ask!</p>
+                            <button id="open-chatbot-modal-btn" class="mt-6 w-full bg-indigo-500 text-white font-bold px-8 py-3 rounded-full text-lg transition-transform transform hover:scale-105">Open AI Explainer</button>
+                        </div>
+                    </div>
+
+                    <!-- Profile View Stub -->
+                    <div id="profile-view" class="dashboard-view">
+                        <h1 class="text-3xl font-bold font-nunito text-gray-800 mb-6">Your Profile</h1>
+                        <div class="bg-white p-8 rounded-lg shadow-sm text-center">
+                            <p>This is where a more detailed user profile would go.</p>
+                            <button id="edit-profile-btn" class="mt-4 bg-blue-500 text-white font-bold px-6 py-2 rounded-full">Edit Profile</button>
+                        </div>
+                    </div>
+                </div>
+             </div>
+        </div>
+
+        <!-- MODALS (Initially Hidden) -->
+
+        <!-- WELCOME MODAL -->
+        <div id="welcome-modal" class="modal hidden fixed inset-0 bg-gray-900 bg-opacity-80 z-50 flex items-center justify-center p-4 opacity-0">
+             <div id="welcome-modal-content" class="modal-content bg-white w-full max-w-lg rounded-2xl shadow-2xl p-8 md:p-12 text-center transform scale-95 relative">
+                <button class="modal-control-button modal-close-button" data-modal-key="welcome"><i data-lucide="x" class="h-6 w-6"></i></button>
+                <h2 class="text-3xl font-bold font-nunito">Let's Get Started!</h2>
+                <p class="mt-2 text-gray-600">Choose how you'd like to sign up.</p>
+                <div class="mt-8 space-y-4">
+                    <button id="google-signup-btn" class="welcome-option w-full flex items-center justify-center gap-3 p-4 border-2 rounded-lg text-lg font-semibold">
+                        <svg class="w-6 h-6" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.222,0-9.519-3.356-11.024-7.944l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C41.332,36.142,44,30.638,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
+                        Sign Up with Google
+                    </button>
+                    <button id="email-signup-btn" class="welcome-option w-full flex items-center justify-center gap-3 p-4 border-2 rounded-lg text-lg font-semibold">
+                        <i data-lucide="mail"></i>
+                        Sign Up with Email
+                    </button>
+                </div>
+                <p class="mt-6 text-sm text-gray-500">Already have an account? <a href="#" id="welcome-to-login-link" class="font-semibold text-blue-600 hover:underline">Log in</a></p>
+             </div>
+        </div>
+
+        <!-- LOGIN MODAL -->
+        <div id="login-modal" class="modal hidden fixed inset-0 bg-gray-900 bg-opacity-80 z-50 flex items-center justify-center p-4 opacity-0">
+            <div id="login-modal-content" class="modal-content bg-white w-full max-w-md rounded-2xl shadow-2xl p-8 md:p-12 text-center transform scale-95 relative">
+                <button class="modal-control-button modal-close-button" data-modal-key="login"><i data-lucide="x" class="h-6 w-6"></i></button>
+                <h2 class="text-3xl font-bold font-nunito">Welcome Back!</h2>
+                <p class="mt-2 text-gray-600">Log in to continue your adventure.</p>
+                <form id="login-form" class="mt-8 text-left">
+                    <div id="login-error" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm"></div>
+                    <div><label for="login-email" class="block text-sm font-semibold text-gray-700">Email</label><input id="login-email" type="email" placeholder="you@example.com" class="mt-1 w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" required></div>
+                    <div class="mt-4"><label for="login-password" class="block text-sm font-semibold text-gray-700">Password</label><input id="login-password" type="password" placeholder="••••••••" class="mt-1 w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" required></div>
+                    <button type="submit" class="mt-8 w-full bg-blue-500 text-white font-bold py-3 rounded-lg hover:bg-blue-600">Log In</button>
+                    <p class="mt-4 text-center text-sm text-gray-600">Don't have an account? <a href="#" id="login-to-register-link" class="font-semibold text-blue-600 hover:underline">Register</a></p>
+                </form>
+            </div>
+        </div>
+        
+        <!-- REGISTER MODAL (Email/Password Only) -->
+        <div id="register-modal" class="modal hidden fixed inset-0 bg-gray-900 bg-opacity-80 z-50 flex items-center justify-center p-4 opacity-0">
+            <div id="register-modal-content" class="modal-content bg-white w-full max-w-md rounded-2xl shadow-2xl p-8 md:p-12 text-center transform scale-95 relative">
+                 <button class="modal-control-button modal-close-button" data-modal-key="register"><i data-lucide="x" class="h-6 w-6"></i></button>
+                <h2 class="text-3xl font-bold font-nunito">Create an Account</h2>
+                <p class="mt-2 text-gray-600">Start your learning journey today!</p>
+                <form id="register-form" class="mt-8 text-left">
+                     <div id="register-error" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm"></div>
+                    <div><label for="register-email" class="block text-sm font-semibold text-gray-700">Email</label><input id="register-email" type="email" placeholder="you@example.com" class="mt-1 w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" required></div>
+                    <div class="mt-4"><label for="register-password" class="block text-sm font-semibold text-gray-700">Password</label><input id="register-password" type="password" placeholder="Choose a strong password" class="mt-1 w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" required></div>
+                    <button type="submit" class="mt-8 w-full bg-blue-500 text-white font-bold py-3 rounded-lg hover:bg-blue-600">Create Account</button>
+                    <p class="mt-4 text-center text-sm text-gray-600">Already have an account? <a href="#" id="register-to-login-link" class="font-semibold text-blue-600 hover:underline">Log In</a></p>
+                </form>
+            </div>
+        </div>
+
+        <!-- ONBOARDING MODAL -->
+        <div id="onboarding-modal" class="modal hidden fixed inset-0 bg-gray-900 bg-opacity-80 z-50 flex items-center justify-center p-4 opacity-0">
+            <div id="onboarding-modal-content" class="modal-content bg-white w-full max-w-2xl rounded-2xl shadow-2xl transform scale-95 relative">
+                <!-- Step 1: Account Type -->
+                <div id="step-1" class="onboarding-step p-8 md:p-12 text-center">
+                    <button class="modal-control-button modal-close-button" data-modal-key="onboarding"><i data-lucide="x" class="h-6 w-6"></i></button>
+                    <h2 class="text-3xl font-bold font-nunito">Join GamiLearn!</h2>
+                    <p class="mt-2 text-gray-600">First, let us know who you are.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                        <div class="account-type-card p-6 border-2 rounded-xl" data-type="student"><i data-lucide="graduation-cap" class="h-16 w-16 mx-auto text-blue-500"></i><h3 class="text-xl font-bold mt-4">Student</h3><p class="text-sm text-gray-500 mt-1">I'm here to play games and learn.</p></div>
+                        <div class="account-type-card p-6 border-2 rounded-xl" data-type="teacher"><i data-lucide="briefcase" class="h-16 w-16 mx-auto text-purple-500"></i><h3 class="text-xl font-bold mt-4">Parent / Teacher</h3><p class="text-sm text-gray-500 mt-1">I want to track progress.</p></div>
+                    </div>
+                    <button id="next-btn-1" class="mt-8 w-full bg-blue-500 text-white font-bold py-3 rounded-lg hover:bg-blue-600 disabled:bg-gray-300" disabled>Next</button>
+                </div>
+                <!-- Step 2: Age Group -->
+                <div id="step-2" class="onboarding-step p-8 md:p-12 text-center">
+                     <button class="modal-control-button modal-back-button" data-target-step="1"><i data-lucide="arrow-left" class="h-6 w-6"></i></button>
+                     <h2 class="text-3xl font-bold font-nunito">What's Your Age Group?</h2>
+                     <p class="mt-2 text-gray-600">This helps us personalize your games.</p>
+                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+                        <div class="age-card p-6 border-2 rounded-xl text-center" data-age="6-8"><h3 class="text-xl font-bold">6-8</h3><p class="text-xs text-gray-500">Years</p></div>
+                        <div class="age-card p-6 border-2 rounded-xl text-center" data-age="10-12"><h3 class="text-xl font-bold">10-12</h3><p class="text-xs text-gray-500">Years</p></div>
+                        <div class="age-card p-6 border-2 rounded-xl text-center" data-age="15+"><h3 class="text-xl font-bold">15+</h3><p class="text-xs text-gray-500">Years</p></div>
+                     </div>
+                     <button id="next-btn-2" class="mt-8 w-full bg-blue-500 text-white font-bold py-3 rounded-lg hover:bg-blue-600 disabled:bg-gray-300" disabled>Next</button>
+                </div>
+                <!-- Step 3: Profile Info & Avatar -->
+                <div id="step-3" class="onboarding-step p-8 md:p-12 text-center">
+                    <button class="modal-control-button modal-back-button" data-target-step="2"><i data-lucide="arrow-left" class="h-6 w-6"></i></button>
+                    <h2 class="text-3xl font-bold font-nunito">Create Your Profile</h2>
+                    <p class="mt-2 text-gray-600">How should we call you?</p>
+                    <input id="nickname-input" type="text" placeholder="Enter your Nickname" class="mt-6 w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                    <p class="mt-6 font-semibold text-gray-700">Choose your Avatar</p>
+                    <div class="grid grid-cols-5 gap-4 mt-4 items-center">
+                        <!-- Avatars populated by JS -->
+                    </div>
+                    <button id="next-btn-3" class="mt-8 w-full bg-blue-500 text-white font-bold py-3 rounded-lg hover:bg-blue-600 disabled:bg-gray-300" disabled>Next</button>
+                </div>
+                <!-- Step 4: Verification -->
+                 <div id="step-4" class="onboarding-step p-8 md:p-12 text-center">
+                    <button class="modal-control-button modal-back-button" data-target-step="3"><i data-lucide="arrow-left" class="h-6 w-6"></i></button>
+                    <h2 class="text-3xl font-bold font-nunito">Account Verification</h2>
+                    <p class="mt-2 text-gray-600">We'll simulate this step for now.</p>
+                    <p class="mt-6 bg-green-100 text-green-700 p-4 rounded-lg">In a real app, we'd send an OTP to your phone or email to verify your account.</p>
+                    <button id="next-btn-4" class="mt-8 w-full bg-blue-500 text-white font-bold py-3 rounded-lg hover:bg-blue-600">Continue</button>
+                </div>
+                <!-- Step 5: Tutorial -->
+                <div id="step-5" class="onboarding-step p-8 md:p-12 text-center">
+                     <button class="modal-control-button modal-back-button" data-target-step="4"><i data-lucide="arrow-left" class="h-6 w-6"></i></button>
+                     <i data-lucide="award" class="h-16 w-16 mx-auto text-yellow-500"></i>
+                     <h2 class="text-3xl font-bold font-nunito mt-4">You're All Set!</h2>
+                     <p class="mt-2 text-gray-600">Complete challenges to earn XP, maintain your streak, and climb the leaderboard.</p>
+                     <div class="mt-6 bg-blue-50 p-4 rounded-lg"><p class="font-bold text-blue-700">🎉 Welcome Bonus! 🎉</p><p class="text-blue-600">You've earned your first badge and +50 XP!</p></div>
+                     <button id="finish-onboarding-btn" class="mt-8 w-full bg-green-500 text-white font-bold py-3 rounded-lg hover:bg-green-600">Let's Go!</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROFILE EDIT MODAL -->
+        <div id="profile-modal" class="modal hidden fixed inset-0 bg-gray-900 bg-opacity-80 z-50 flex items-center justify-center p-4 opacity-0">
+             <div id="profile-modal-content" class="modal-content bg-white w-full max-w-lg rounded-2xl shadow-2xl p-8 md:p-12 text-center transform scale-95 relative">
+                <button class="modal-control-button modal-close-button" data-modal-key="profile"><i data-lucide="x" class="h-6 w-6"></i></button>
+                <h2 class="text-3xl font-bold font-nunito">Edit Your Profile</h2>
+                <div class="mt-6">
+                    <label for="profile-nickname-input" class="block text-left text-sm font-semibold text-gray-700">Nickname</label>
+                    <input id="profile-nickname-input" type="text" class="mt-1 w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div class="mt-6">
+                    <p class="text-left font-semibold text-gray-700">Avatar</p>
+                    <div id="profile-avatar-selection" class="grid grid-cols-5 gap-4 mt-2 items-center">
+                        <!-- Avatar options will be populated by JS -->
+                    </div>
+                </div>
+                <button id="save-profile-btn" class="mt-8 w-full bg-blue-500 text-white font-bold py-3 rounded-lg hover:bg-blue-600">Save Changes</button>
+            </div>
+        </div>
+
+        <!-- GEMINI: CHATBOT MODAL -->
+        <div id="chatbot-modal" class="modal hidden fixed inset-0 bg-gray-900 bg-opacity-80 z-50 flex items-center justify-center p-4 opacity-0">
+            <div id="chatbot-modal-content" class="modal-content bg-white w-full max-w-lg h-3/4 rounded-2xl shadow-2xl transform scale-95 flex flex-col">
+                <div class="flex-shrink-0 p-4 border-b flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="bot" class="text-indigo-500"></i>
+                        <h2 class="text-xl font-bold font-nunito">✨ AI Explainer</h2>
+                    </div>
+                    <button class="modal-control-button !static !top-auto !right-auto" data-modal-key="chatbot"><i data-lucide="x" class="h-6 w-6"></i></button>
+                </div>
+                <div id="chat-history" class="flex-grow p-4 overflow-y-auto space-y-4">
+                    <!-- Chat messages will be appended here -->
+                    <div class="flex items-start gap-2.5">
+                        <div class="flex flex-col w-full max-w-[320px] leading-1.5 p-4 border-gray-200 bg-gray-100 rounded-e-xl rounded-es-xl">
+                            <p class="text-sm font-normal text-gray-900">Hello! Ask me any question from your school subjects.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex-shrink-0 p-4 border-t">
+                    <form id="chatbot-form" class="flex items-center gap-2">
+                        <input id="chatbot-input" type="text" placeholder="Ask a question..." class="flex-grow p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none" required>
+                        <button type="submit" class="bg-indigo-500 text-white p-3 rounded-lg hover:bg-indigo-600 disabled:bg-gray-400">
+                            <i data-lucide="send" class="h-6 w-6"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+         <!-- GEMINI: STORY MODAL -->
+        <div id="story-modal" class="modal hidden fixed inset-0 bg-gray-900 bg-opacity-80 z-50 flex items-center justify-center p-4 opacity-0">
+             <div id="story-modal-content" class="modal-content bg-white w-full max-w-lg rounded-2xl shadow-2xl transform scale-95 flex flex-col">
+                <div class="flex-shrink-0 p-4 border-b flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="book-open-text" class="text-purple-500"></i>
+                        <h2 class="text-xl font-bold font-nunito">✨ Your Learning Story</h2>
+                    </div>
+                    <button class="modal-control-button !static !top-auto !right-auto" data-modal-key="story"><i data-lucide="x" class="h-6 w-6"></i></button>
+                </div>
+                <div id="story-content" class="flex-grow p-6 overflow-y-auto">
+                    <!-- Story will be populated here -->
+                </div>
+             </div>
+        </div>
+
+        <!-- Mobile Bottom Nav Bar (Dashboard only) -->
+        <nav id="mobile-dashboard-nav" class="md:hidden hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50">
+            <div class="flex justify-around">
+                <a href="#" class="nav-item flex flex-col items-center justify-center p-3 active" data-view="games-view"><i data-lucide="gamepad-2"></i><span class="nav-text text-xs">Games</span></a>
+                <a href="#" class="nav-item flex flex-col items-center justify-center p-3 text-gray-500" data-view="challenges-view"><i data-lucide="check-square"></i><span class="nav-text text-xs">Challenges</span></a>
+                <a href="#" class="nav-item flex flex-col items-center justify-center p-3 text-gray-500" data-view="leaderboard-view"><i data-lucide="bar-chart-3"></i><span class="nav-text text-xs">Leaderboard</span></a>
+                <a href="#" class="nav-item flex flex-col items-center justify-center p-3 text-gray-500" data-view="chatbot-view"><i data-lucide="bot"></i><span class="nav-text text-xs">Chatbot</span></a>
+                <a href="#" id="profile-btn-mobile" class="nav-item flex flex-col items-center justify-center p-3 text-gray-500" data-view="profile-view"><i data-lucide="user"></i><span class="nav-text text-xs">Profile</span></a>
+            </div>
+        </nav>
+
+        
+
+        <!-- Footer (fixed at bottom) -->
+        <footer id="main-footer" class="bg-gray-800 text-white w-full">
+    <div class="container mx-auto px-6 py-6">
+        <div class="sm:flex sm:justify-between sm:items-center">
+            <div class="mb-4 sm:mb-0">
+                <h3 class="text-xl font-bold font-nunito">GamiLearn</h3>
+                <p class="text-gray-400 mt-1">Built for SIH 2025 – Empowering Rural Education.</p>
+            </div>
+            <div class="flex space-x-6">
+                <a href="#" class="hover:text-blue-400">About Us</a>
+                <a href="#" class="hover:text-blue-400">Contact</a>
+                <a href="#" class="hover:text-blue-400">Privacy Policy</a>
+            </div>
+        </div>
+    </div>
+</footer>
+
+    </div>
+
+    <style>
+        /* Upload Section Styles */
+        #upload-section .bg-gray-50 {
+            border: 1px solid #e5e7eb;
+        }
+        #photo-upload-form label[for="photo-upload"] {
+            /* Rectangle shape for upload area */
+            border-radius: 0.75rem; /* rounded-xl for slightly curved corners */
+            aspect-ratio: unset;
+            width: 100%;
+            max-width: 320px;
+            height: 120px;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s, border-color 0.2s, color 0.2s;
+        }
+        #photo-upload-form label[for="photo-upload"]:hover {
+            background-color: #dbeafe;
+            border-color: #3b82f6;
+            color: #2563eb;
+        }
+        #photo-upload-form textarea:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px #bfdbfe;
+        }
+        #photo-upload-form button:active {
+            transform: scale(0.98);
+        }
+        /* Make sure footer stays at bottom */
+        #main-footer {
+            left: 0;
+            right: 0;
+        }
+        body, html, #app-container {
+            min-height: 100vh;
+            height: 100%;
+        }
+        #app-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            height: 100%;
+            padding-bottom: 0; /* Remove space for fixed footer */
+        }
+        main, #landing-page, #dashboard-page {
+            flex: 1 0 auto;
+        }
+        #main-footer {
+            flex-shrink: 0;
+            position: static !important; /* Remove fixed positioning */
+            bottom: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+        }
+        @media (max-width: 640px) {
+            #main-footer {
+                padding-bottom: 60px;
+            }
+        }
+    </style>
+    <script src="api.js"></script>
+    <script src="plubic.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+    // --- ELEMENTS ---
+        const landingPage = document.getElementById('landing-page');
+        const dashboardPage = document.getElementById('dashboard-page');
+        const mainHeader = document.getElementById('main-header');
+        const mainFooter = document.getElementById('main-footer');
+        const guestBanner = document.getElementById('guest-banner');
+        const mobileDashboardNav = document.getElementById('mobile-dashboard-nav');
+
+        // Modals
+        const allModals = {
+            welcome: { modal: document.getElementById('welcome-modal'), content: document.getElementById('welcome-modal-content') },
+            login: { modal: document.getElementById('login-modal'), content: document.getElementById('login-modal-content') },
+            register: { modal: document.getElementById('register-modal'), content: document.getElementById('register-modal-content') },
+            onboarding: { modal: document.getElementById('onboarding-modal'), content: document.getElementById('onboarding-modal-content') },
+            profile: { modal: document.getElementById('profile-modal'), content: document.getElementById('profile-modal-content') },
+            chatbot: { modal: document.getElementById('chatbot-modal'), content: document.getElementById('chatbot-modal-content') },
+            story: { modal: document.getElementById('story-modal'), content: document.getElementById('story-modal-content') }
+        };
+        const onboardingSteps = document.querySelectorAll('.onboarding-step');
+        
+        // --- BUTTONS ---
+        const startLearningBtn = document.getElementById('start-learning-btn');
+        const guestBtnHero = document.getElementById('guest-btn-hero');
+        const demoBtn = document.getElementById('demo-btn');
+        const registerBtnNav = document.getElementById('register-btn-nav');
+        const registerBtnMobile = document.getElementById('register-btn-mobile');
+        const loginBtnNav = document.getElementById('login-btn-nav');
+        const loginBtnMobile = document.getElementById('login-btn-mobile');
+        const logoutBtn = document.getElementById('logout-btn');
+        const dashboardBackBtn = document.getElementById('dashboard-back-btn');
+        const editProfileBtn = document.getElementById('edit-profile-btn');
+        const openChatbotModalBtn = document.getElementById('open-chatbot-modal-btn');
+        const doubtForm = document.getElementById('doubt-form');
+        
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        // Ensure lucide icons are rendered
+        try { lucide.createIcons(); } catch (e) { console.warn('lucide init failed', e); }
+
+        // Mobile menu toggle
+        if (mobileMenuButton) {
+            mobileMenuButton.addEventListener('click', () => {
+                if (!mobileMenu) return;
+                mobileMenu.classList.toggle('hidden');
+            });
+        }
+
+        // Add top padding to main content to avoid overlap with fixed header
+        const headerHeight = mainHeader ? mainHeader.offsetHeight : 64;
+        if (landingPage) landingPage.style.paddingTop = (headerHeight + 16) + 'px';
+
+        // --- STATE & DATA (Simulated Backend) ---
+        let usersDB = []; 
+        let currentUser = null;
+        let onboardingState = {};
+        
+        const predefinedAvatars = [
+            "https://placehold.co/80x80/FFDDC1/FF6347?text=🦊",
+            "https://placehold.co/80x80/C1FFD7/4CAF50?text=🐸",
+            "https://placehold.co/80x80/D1C1FF/8A2BE2?text=🦉",
+            "https://placehold.co/80x80/C1EFFF/00BFFF?text=🐧",
+            "https://placehold.co/80x80/FFF5C1/FFD700?text=🦁"
+        ];
+        const googleAvatar = "https://placehold.co/80x80/E8F0FE/1A73E8?text=G";
+
+        const gamesData = {
+            "6-8": [{ title: "Alphabet Train", desc: "Learn your ABCs in a fun journey.", icon: "train", color: "blue", progress: 60, isLocked: false }, { title: "Number Pond", desc: "Count the frogs and learn numbers.", icon: "fish", color: "green", progress: 30, isLocked: false }, { title: "Shape Sorter", desc: "Match the shapes to the correct slots.", icon: "shapes", color: "yellow", progress: 0, isLocked: true }, { title: "Color Mix", desc: "Mix colors to create new ones!", icon: "blend", color: "purple", progress: 0, isLocked: true }],
+            "10-12": [{ title: "Fruit Ninja: Math", desc: "Slice fruit and solve math problems.", icon: "swords", color: "red", progress: 80, isLocked: false }, { title: "WordChain", desc: "Build the longest word chain.", icon: "link", color: "indigo", progress: 45, isLocked: false }, { title: "Science Lab", desc: "Conduct virtual science experiments.", icon: "flask-conical", color: "green", progress: 20, isLocked: false }, { title: "History Quest", desc: "Travel through time and answer questions.", icon: "scroll-text", color: "yellow", progress: 0, isLocked: true }],
+            "15+": [{ title: "FootChain Programming", desc: "Learn coding basics with block logic.", icon: "footprints", color: "purple", progress: 75, isLocked: false }, { title: "Jumble Words", desc: "Unscramble complex words against time.", icon: "recycle", color: "blue", progress: 50, isLocked: false }, { title: "Debate Corner", desc: "Practice critical thinking and debating.", icon: "users", color: "red", progress: 10, isLocked: false }, { title: "Stock Market Sim", desc: "Learn financial literacy by playing.", icon: "line-chart", color: "green", progress: 0, isLocked: true }]
+        };
+        const guestGames = [{ title: "Alphabet Train Demo", desc: "Try a few levels of the alphabet game.", icon: "train", color: "blue", progress: 0, isLocked: false }, { title: "Fruit Ninja: Math Demo", desc: "Slice some fruit and solve problems.", icon: "swords", color: "red", progress: 0, isLocked: false }];
+
+        // --- GOOGLE SHEET SIMULATION ---
+        const saveToGoogleSheet = (userData) => {
+            const dataRow = {
+                Timestamp: new Date().toISOString(),
+                UserID: userData.userId,
+                Name: userData.name,
+                Email: userData.email,
+                AgeGroup: userData.ageGroup,
+                Language: userData.language || 'English',
+                ProfilePictureURL: userData.avatar,
+                XP: userData.xp,
+                Streak: userData.streak,
+                Badges: userData.badges ? userData.badges.join(', ') : '',
+                isRegistered: userData.isRegistered
+            };
+            console.log("%c[Google Sheet Simulation]", "color: #10B981; font-weight: bold;");
+            console.log("The following data would be sent to a backend server to update the Google Sheet:");
+            console.table(dataRow);
+        };
+
+        // --- GEMINI API INTEGRATION (via backend proxy to avoid CORS and key exposure) ---
+        const callGeminiAPI = async (prompt) => {
+            try {
+                const response = await fetch('/api/gemini', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({}));
+                    console.error('Gemini proxy error:', error);
+                    return (error && error.error) ? `Error: ${error.error}` : 'Sorry, the AI service is unavailable right now.';
+                }
+
+                const data = await response.json();
+                const text = data && data.text;
+                return text || 'I received a response, but it was empty. Please try again.';
+            } catch (err) {
+                console.error('Network or fetch error:', err);
+                return 'There was a network error. Please ensure the server is running and try again.';
+            }
+        };
+
+
+        // --- MODAL & UI LOGIC ---
+        const openModal = (modalKey) => {
+            const { modal, content } = allModals[modalKey];
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10);
+            lucide.createIcons();
+        };
+        const closeModal = (modalKey) => {
+            const { modal, content } = allModals[modalKey];
+            modal.classList.add('opacity-0');
+            content.classList.add('scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        };
+
+        const setupAllModalListeners = () => {
+            document.querySelectorAll('.modal-close-button').forEach(btn => {
+                const modalKey = btn.dataset.modalKey;
+                btn.addEventListener('click', () => closeModal(modalKey));
+            });
+            document.getElementById('google-signup-btn').addEventListener('click', handleGoogleSignUp);
+            document.getElementById('email-signup-btn').addEventListener('click', () => { closeModal('welcome'); openModal('register'); });
+            document.getElementById('welcome-to-login-link').addEventListener('click', (e) => { e.preventDefault(); closeModal('welcome'); openModal('login'); });
+            document.getElementById('login-to-register-link').addEventListener('click', (e) => { e.preventDefault(); closeModal('login'); openModal('welcome'); });
+            document.getElementById('login-form').addEventListener('submit', handleLogin);
+            document.getElementById('register-to-login-link').addEventListener('click', (e) => { e.preventDefault(); closeModal('register'); openModal('login'); });
+            document.getElementById('register-form').addEventListener('submit', handleRegister);
+            document.getElementById('save-profile-btn').addEventListener('click', handleProfileSave);
+            openChatbotModalBtn.addEventListener('click', () => openModal('chatbot'));
+        };
+
+        const openOnboarding = (isGoogleSignUp = false) => {
+            onboardingState = isGoogleSignUp ? onboardingState : {};
+            goToStep(isGoogleSignUp ? 2 : 1);
+            openModal('onboarding');
+        };
+        
+        const goToStep = (stepNumber) => {
+            onboardingSteps.forEach(step => step.classList.remove('active'));
+            document.getElementById(`step-${stepNumber}`).classList.add('active');
+            lucide.createIcons();
+        };
+
+        const setupOnboardingListeners = () => {
+             document.querySelectorAll('.modal-back-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetStep = button.dataset.targetStep;
+                    goToStep(targetStep);
+                });
+            });
+            document.querySelectorAll('#step-1 .account-type-card').forEach(card => card.addEventListener('click', e => {
+                document.querySelectorAll('#step-1 .account-type-card').forEach(c => c.classList.remove('selected'));
+                e.currentTarget.classList.add('selected');
+                onboardingState.accountType = e.currentTarget.dataset.type;
+                document.getElementById('next-btn-1').disabled = false;
+            }));
+            document.getElementById('next-btn-1').addEventListener('click', () => goToStep(2));
+            document.querySelectorAll('#step-2 .age-card').forEach(card => card.addEventListener('click', e => {
+                document.querySelectorAll('#step-2 .age-card').forEach(c => c.classList.remove('selected'));
+                e.currentTarget.classList.add('selected');
+                onboardingState.ageGroup = e.currentTarget.dataset.age;
+                document.getElementById('next-btn-2').disabled = false;
+            }));
+            document.getElementById('next-btn-2').addEventListener('click', () => goToStep(3));
+            
+            const nicknameInput = document.getElementById('nickname-input');
+            const avatarUploadInput = document.getElementById('avatar-upload-input');
+            const avatarContainer = document.querySelector('#step-3 .grid');
+            const checkStep3Completion = () => { document.getElementById('next-btn-3').disabled = !(onboardingState.name && onboardingState.avatar); };
+            const setupAvatarSelection = (container) => {
+                 container.innerHTML = '';
+                 predefinedAvatars.forEach(url => {
+                    const avatarDiv = document.createElement('div');
+                    avatarDiv.className = 'avatar-option p-1 border-2 rounded-full';
+                    avatarDiv.dataset.avatarUrl = url;
+                    avatarDiv.innerHTML = `<img src="${url}" class="rounded-full">`;
+                    container.appendChild(avatarDiv);
+                });
+                const uploadLabel = document.createElement('label');
+                uploadLabel.htmlFor = 'avatar-upload-input';
+                uploadLabel.className = 'avatar-option p-1 border-2 border-dashed rounded-full w-20 h-20 mx-auto flex items-center justify-center text-gray-400 hover:text-blue-500 hover:border-blue-500';
+                uploadLabel.innerHTML = `<i data-lucide="upload" class="h-8 w-8"></i>`;
+                container.appendChild(uploadLabel);
+                lucide.createIcons();
+            };
+            setupAvatarSelection(avatarContainer);
+            avatarContainer.addEventListener('click', e => {
+                 if (e.target.closest('.avatar-option')) {
+                    const selected = e.target.closest('.avatar-option');
+                    avatarContainer.querySelectorAll('.avatar-option').forEach(a => a.classList.remove('selected'));
+                    if (selected.dataset.avatarUrl) {
+                        selected.classList.add('selected');
+                        onboardingState.avatar = selected.dataset.avatarUrl;
+                        checkStep3Completion();
+                    }
+                 }
+            });
+            nicknameInput.addEventListener('input', () => { onboardingState.name = nicknameInput.value; checkStep3Completion(); });
+            avatarUploadInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        onboardingState.avatar = e.target.result;
+                         avatarContainer.querySelectorAll('.avatar-option').forEach(a => a.classList.remove('selected'));
+                        checkStep3Completion();
+                        alert("Image selected! It will be used as your avatar.");
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            document.getElementById('next-btn-3').addEventListener('click', () => goToStep(4));
+            document.getElementById('next-btn-4').addEventListener('click', () => goToStep(5));
+            document.getElementById('finish-onboarding-btn').addEventListener('click', async () => {
+                // Prepare payload for backend register
+                const payload = {
+                    email: onboardingState.email,
+                    password: onboardingState.password,
+                    name: onboardingState.name,
+                    avatar: onboardingState.avatar,
+                    ageGroup: onboardingState.ageGroup,
+                    accountType: onboardingState.accountType,
+                    language: onboardingState.language || 'English'
+                };
+                try {
+                    // Call backend register (api.js registers and stores token)
+                    await register(payload.email, payload.password, payload.name, payload.avatar, payload.ageGroup, payload.accountType, payload.language);
+                    // Fetch profile from backend
+                    const data = await getProfile();
+                    currentUser = {
+                        userId: data.user.id,
+                        email: data.user.email,
+                        name: data.user.name,
+                        avatar: data.user.avatar || predefinedAvatars[0],
+                        ageGroup: data.user.age_group || onboardingState.ageGroup,
+                        accountType: data.user.account_type || onboardingState.accountType,
+                        xp: data.stats?.xp || 50,
+                        streak: data.stats?.streak || 1,
+                        badges: data.stats?.badges ? data.stats.badges.split(',') : ['New Learner'],
+                        isRegistered: true
+                    };
+                    // Keep a lightweight client copy for UI features
+                    usersDB.push(currentUser);
+                    saveToGoogleSheet(currentUser);
+                    closeModal('onboarding');
+                    showDashboard();
+                } catch (err) {
+                    console.error('Registration failed', err);
+                    alert(err?.error || err?.message || 'Registration failed. Please try again.');
+                }
+            });
+        };
+
+        const updateDashboardHeader = () => {
+            if (!currentUser || currentUser.isGuest) return;
+            document.getElementById('dash-avatar-main').src = currentUser.avatar;
+            document.getElementById('dash-user-name').textContent = currentUser.name;
+            const xpEl = document.getElementById('xp-points');
+            xpEl.textContent = currentUser.xp.toLocaleString();
+            xpEl.classList.add('xp-animate');
+            setTimeout(() => xpEl.classList.remove('xp-animate'), 500);
+            document.getElementById('streak-days').textContent = `🔥 ${currentUser.streak}`;
+        };
+
+        const showDashboard = (isGuest = false) => {
+            landingPage.classList.add('hidden');
+            mainHeader.classList.add('hidden');
+            mainFooter.classList.add('hidden');
+            dashboardPage.classList.remove('hidden');
+            mobileDashboardNav.classList.remove('hidden');
+            window.scrollTo(0, 0);
+
+            if (isGuest) {
+                currentUser = { isGuest: true, userId: `guest_${Date.now()}`, name: 'Guest' };
+                guestBanner.classList.remove('hidden');
+                logoutBtn.classList.add('md:hidden');
+                document.getElementById('dash-avatar-main').src = `https://placehold.co/40x40/E5E7EB/4B5563?text=G`;
+                document.getElementById('dash-user-name').textContent = "Guest";
+                document.getElementById('xp-points').textContent = "0";
+                document.getElementById('streak-days').textContent = "🔥 0";
+                saveToGoogleSheet(currentUser);
+            } else if (currentUser && currentUser.isRegistered) {
+                guestBanner.classList.add('hidden');
+                logoutBtn.classList.remove('md:hidden');
+                updateDashboardHeader();
+                document.getElementById('welcome-header').textContent = `Good Morning, ${currentUser.name}!`;
+            }
+            switchDashboardView('games-view');
+            lucide.createIcons();
+        };
+
+        const switchDashboardView = (viewId) => {
+             document.querySelectorAll('.dashboard-view').forEach(view => view.classList.remove('active'));
+             document.getElementById(viewId).classList.add('active');
+
+             document.querySelectorAll('#mobile-dashboard-nav .nav-item').forEach(item => {
+                if (item.dataset.view === viewId) {
+                    item.classList.add('active');
+                    item.classList.remove('text-gray-500');
+                } else {
+                    item.classList.remove('active');
+                    item.classList.add('text-gray-500');
+                }
+             });
+
+             if (viewId === 'games-view') {
+                populateGames();
+             } else if (viewId === 'leaderboard-view') {
+                populateLeaderboard();
+             }
+        };
+
+        const populateGames = () => {
+            const games = (currentUser.isGuest) ? guestGames : (gamesData[currentUser.ageGroup] || []);
+            const gamesGrid = document.getElementById('games-grid');
+            gamesGrid.innerHTML = '';
+            games.forEach(game => {
+                const lockedOverlay = game.isLocked ? `<div class="absolute inset-0 bg-gray-600/70 flex items-center justify-center rounded-xl cursor-not-allowed"><i data-lucide="lock" class="h-10 w-10 text-white"></i></div>` : '';
+                const progressColor = game.isLocked ? 'bg-gray-300' : 'bg-blue-500';
+                const cardClasses = `game-card bg-white p-6 rounded-xl shadow-md relative overflow-hidden ${game.isLocked ? '' : 'cursor-pointer'}`;
+                gamesGrid.innerHTML += `<div class="${cardClasses}"><div class="flex items-start justify-between"><div class="bg-${game.color}-100 text-${game.color}-600 p-3 rounded-lg"><i data-lucide="${game.icon}"></i></div>${!currentUser.isGuest ? `<span class="font-bold text-sm ${game.isLocked ? 'text-gray-500' : 'text-blue-500'}">${game.isLocked ? 'Locked' : 'Level ' + Math.ceil(game.progress / 20)}</span>` : ''}</div><h3 class="text-xl font-bold mt-4">${game.title}</h3><p class="text-gray-500 mt-1 h-10">${game.desc}</p>${!currentUser.isGuest ? `<div class="mt-4"><div class="w-full bg-gray-200 rounded-full h-2.5"><div class="progress-bar-fill ${progressColor} h-2.5 rounded-full" style="width: ${game.progress}%"></div></div></div>` : ''}${lockedOverlay}</div>`;
+            });
+            lucide.createIcons();
+        };
+        
+        const populateLeaderboard = () => {
+            const container = document.getElementById('leaderboard-container');
+            container.innerHTML = ''; // Clear
+            const allUsers = [...usersDB];
+            if (!allUsers.find(u => u.name === 'Sunita K.')) { // Add dummy users if not present
+                 allUsers.push(
+                    { name: 'Sunita K.', xp: 12500, avatar: 'https://placehold.co/48x48/FDE68A/FBBF24?text=S'},
+                    { name: 'Ravi M.', xp: 11800, avatar: 'https://placehold.co/48x48/D1D5DB/9CA3AF?text=R'},
+                    { name: 'Priya S.', xp: 10500, avatar: 'https://placehold.co/48x48/FFEDD5/FB923C?text=P'}
+                );
+            }
+           
+            if (currentUser && !currentUser.isGuest && !allUsers.find(u => u.userId === currentUser.userId)) {
+                allUsers.push(currentUser);
+            }
+
+            const leaderboardData = allUsers.filter(u => u.isRegistered)
+                .sort((a, b) => b.xp - a.xp)
+                .map((user, i) => ({...user, rank: i+1}));
+
+            if(leaderboardData.length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-500">No ranked players yet. Be the first!</p>`;
+                return;
+            }
+
+            leaderboardData.forEach(user => {
+                const isCurrentUser = currentUser && !currentUser.isGuest && user.userId === currentUser.userId;
+                const colors = {
+                    1: { bg: 'bg-yellow-100', border: 'border-yellow-300', text: 'text-yellow-800', badge: '🥇' },
+                    2: { bg: 'bg-gray-100', border: 'border-gray-300', text: 'text-gray-800', badge: '🥈' },
+                    3: { bg: 'bg-orange-100', border: 'border-orange-300', text: 'text-orange-800', badge: '🥉' },
+                };
+                const style = colors[user.rank] || { bg: 'bg-white', border: 'border-gray-200', text: 'text-gray-700', badge: '' };
+                const highlightClass = isCurrentUser ? 'ring-2 ring-blue-500 scale-105' : '';
+
+                container.innerHTML += `
+                    <div class="flex items-center ${style.bg} border-2 ${style.border} p-4 rounded-xl shadow-sm ${highlightClass}">
+                        <span class="text-2xl font-bold w-10 text-center">${user.rank <= 3 ? style.badge : '#' + user.rank}</span>
+                        <img src="${user.avatar}" class="w-12 h-12 rounded-full border-2 border-white ml-2">
+                        <div class="ml-4 flex-grow"><p class="font-bold text-lg ${style.text}">${user.name}</p></div>
+                        <div class="font-nunito font-extrabold text-lg ${style.text}">${user.xp.toLocaleString()} XP</div>
+                    </div>
+                `;
+            });
+        };
+
+        const showLandingPage = () => {
+             dashboardPage.classList.add('hidden');
+             mobileDashboardNav.classList.add('hidden');
+             landingPage.classList.remove('hidden');
+             mainHeader.classList.remove('hidden');
+             mainFooter.classList.remove('hidden');
+             currentUser = null;
+             window.scrollTo(0, 0);
+        };
+        
+        // --- EVENT HANDLERS ---
+        const handleGoogleSignUp = () => {
+            closeModal('welcome');
+            onboardingState = { email: 'google.user@example.com', name: 'Google User', avatar: googleAvatar };
+            document.getElementById('nickname-input').value = onboardingState.name;
+            openOnboarding(true);
+        };
+
+        // Quick diagnostic & safety: force-show the main header if it's accidentally hidden
+        try {
+            if (mainHeader) {
+                if (mainHeader.classList.contains('hidden')) {
+                    console.warn('[header-fix] mainHeader had class hidden — removing it');
+                    mainHeader.classList.remove('hidden');
+                }
+                // ensure visible style
+                mainHeader.style.display = mainHeader.style.display || 'block';
+                mainHeader.style.zIndex = 9999;
+                mainHeader.style.position = mainHeader.style.position || 'fixed';
+                mainHeader.style.top = '0';
+            } else {
+                console.warn('[header-fix] mainHeader element not found');
+            }
+        } catch (e) { console.error('[header-fix] error', e); }
+
+        // Additional header diagnostics: ensure nav links and auth buttons inside header are visible
+        try {
+            if (mainHeader) {
+                const toUnhide = mainHeader.querySelectorAll('.hidden, .md\:hidden');
+                toUnhide.forEach(el => {
+                    // Only unhide items that are direct header content (nav or flex containers)
+                    if (el.closest('#main-header')) {
+                        el.classList.remove('hidden');
+                        // add a flexible display for nav groups
+                        if (el.classList.contains('md:flex') || el.className.indexOf('md:flex') !== -1) {
+                            el.classList.add('flex');
+                        }
+                        el.style.display = el.style.display || 'flex';
+                    }
+                });
+                // specifically ensure the right-side auth buttons are visible
+                const authRight = mainHeader.querySelectorAll('#main-header .md\:flex.items-center.space-x-4, #main-header .md\:flex.items-center.space-x-8');
+                authRight.forEach(el => { el.style.display = 'flex'; el.classList.remove('hidden'); });
+                console.log('[header-fix] header diagnostics: forced unhide, items changed=', toUnhide.length);
+            }
+        } catch (e) { console.error('[header-fix] diagnostics error', e); }
+        const handleLogin = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const errorDiv = document.getElementById('login-error');
+            errorDiv.classList.add('hidden');
+            try {
+                await login(email, password); // from api.js - stores token
+                // fetch profile
+                const data = await getProfile();
+                currentUser = {
+                    userId: data.user.id,
+                    email: data.user.email,
+                    name: data.user.name,
+                    avatar: data.user.avatar || predefinedAvatars[0],
+                    xp: data.stats?.xp || 0,
+                    streak: data.stats?.streak || 0,
+                    badges: data.stats?.badges ? data.stats.badges.split(',') : [],
+                    isRegistered: true
+                };
+                closeModal('login');
+                showDashboard();
+            } catch (err) {
+                console.error(err);
+                errorDiv.textContent = err?.error || err?.message || 'Login failed';
+                errorDiv.classList.remove('hidden');
+            }
+        };
+        const handleRegister = (e) => {
+            e.preventDefault();
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const errorDiv = document.getElementById('register-error');
+            errorDiv.classList.add('hidden');
+            // Save into onboarding state and continue onboarding; actual register happens after onboarding finish
+            onboardingState.email = email;
+            onboardingState.password = password;
+            closeModal('register');
+            openOnboarding();
+        };
+        const handleProfileSave = () => {
+            const newName = document.getElementById('profile-nickname-input').value;
+            if (newName) currentUser.name = newName;
+            const selectedAvatar = document.querySelector('#profile-avatar-selection .avatar-option.selected');
+            if(selectedAvatar && selectedAvatar.dataset.avatarUrl) { currentUser.avatar = selectedAvatar.dataset.avatarUrl; }
+            saveToGoogleSheet(currentUser);
+            closeModal('profile');
+            updateDashboardHeader();
+        };
+        const openProfileEditor = () => {
+            document.getElementById('profile-nickname-input').value = currentUser.name;
+            const avatarContainer = document.getElementById('profile-avatar-selection');
+            avatarContainer.innerHTML = '';
+            predefinedAvatars.forEach(url => {
+                const isSelected = currentUser.avatar === url;
+                const avatarDiv = document.createElement('div');
+                avatarDiv.className = `avatar-option p-1 border-2 rounded-full ${isSelected ? 'selected' : ''}`;
+                avatarDiv.dataset.avatarUrl = url;
+                avatarDiv.innerHTML = `<img src="${url}" class="rounded-full">`;
+                avatarContainer.appendChild(avatarDiv);
+            });
+            avatarContainer.addEventListener('click', e => {
+                if (e.target.closest('.avatar-option')) {
+                    avatarContainer.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
+                    e.target.closest('.avatar-option').classList.add('selected');
+                }
+            });
+            openModal('profile');
+        };
+
+        const handleChatbotSubmit = async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('chatbot-input');
+            const history = document.getElementById('chat-history');
+            const form = document.getElementById('chatbot-form');
+            const userMessage = input.value.trim();
+            if (!userMessage) return;
+
+            // Display user message
+            history.innerHTML += `<div class="flex items-start gap-2.5 justify-end"><div class="flex flex-col w-full max-w-[320px] leading-1.5 p-4 border-gray-200 bg-blue-500 text-white rounded-s-xl rounded-ee-xl"><p class="text-sm font-normal">${userMessage}</p></div></div>`;
+            input.value = '';
+            history.scrollTop = history.scrollHeight;
+            form.querySelector('button').disabled = true;
+
+            // Display typing indicator
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'flex items-start gap-2.5';
+            typingIndicator.innerHTML = `<div class="flex items-center space-x-2"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
+            history.appendChild(typingIndicator);
+            history.scrollTop = history.scrollHeight;
+            
+            const response = await callGeminiAPI(userMessage);
+
+            // Remove typing indicator and display AI response
+            history.removeChild(typingIndicator);
+            history.innerHTML += `<div class="flex items-start gap-2.5"><div class="flex flex-col w-full max-w-[320px] leading-1.5 p-4 border-gray-200 bg-gray-100 rounded-e-xl rounded-es-xl"><p class="text-sm font-normal text-gray-900">${response.replace(/\n/g, '<br>')}</p></div></div>`;
+            history.scrollTop = history.scrollHeight;
+            form.querySelector('button').disabled = false;
+        };
+
+        const handleGenerateStory = async (e) => {
+            const topic = e.currentTarget.closest('.challenge-card').dataset.topic;
+            const storyContent = document.getElementById('story-content');
+            openModal('story');
+            storyContent.innerHTML = `<div class="flex items-center justify-center h-full"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
+
+            const prompt = `Write a short, exciting, and encouraging story for a young learner named ${currentUser.name}. The story should be about their adventure learning about ${topic}. Keep it under 150 words.`;
+            const story = await callGeminiAPI(prompt);
+            storyContent.innerHTML = `<p>${story.replace(/\n/g, '<br>')}</p>`;
+        };
+        
+        // --- EVENT LISTENERS ---
+        mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+        
+        const openWelcome = (e) => { e.preventDefault(); openModal('welcome'); };
+        startLearningBtn.addEventListener('click', openWelcome);
+        registerBtnNav.addEventListener('click', openWelcome);
+        registerBtnMobile.addEventListener('click', openWelcome);
+        
+        const openLogin = (e) => { e.preventDefault(); openModal('login'); };
+        loginBtnNav.addEventListener('click', openLogin);
+        loginBtnMobile.addEventListener('click', openLogin);
+
+        logoutBtn.addEventListener('click', (e) => { e.preventDefault(); showLandingPage(); });
+        dashboardBackBtn.addEventListener('click', (e) => { e.preventDefault(); showLandingPage(); });
+        
+        guestBtnHero.addEventListener('click', (e) => { e.preventDefault(); showDashboard(true); });
+        demoBtn.addEventListener('click', (e) => { e.preventDefault(); showDashboard(true); });
+        
+        document.getElementById('guest-register-link').addEventListener('click', (e) => {
+             e.preventDefault();
+             showLandingPage();
+             setTimeout(() => openModal('welcome'), 100);
+        });
+
+        mobileDashboardNav.addEventListener('click', (e) => {
+            const navItem = e.target.closest('.nav-item');
+            if (!navItem) return;
+            e.preventDefault();
+            
+            if (navItem.dataset.view === 'profile-view') {
+                 if (currentUser && !currentUser.isGuest) { openProfileEditor(); }
+            } else {
+                 switchDashboardView(navItem.dataset.view);
+            }
+        });
+        editProfileBtn.addEventListener('click', openProfileEditor);
+
+        document.querySelectorAll('.complete-challenge-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const button = e.currentTarget;
+                if (button.disabled) return;
+
+                if (currentUser && !currentUser.isGuest) {
+                    currentUser.xp += 20; // Example XP gain
+                    currentUser.streak += 1;
+                    updateDashboardHeader();
+                    saveToGoogleSheet(currentUser);
+                }
+                
+                button.innerHTML = '<i data-lucide="check" class="h-6 w-6"></i>';
+                button.classList.remove('bg-gray-200', 'text-gray-500');
+                button.classList.add('bg-green-500', 'text-white');
+                lucide.createIcons();
+                button.disabled = true;
+
+                // Show story button
+                button.closest('.challenge-card').querySelector('.story-btn-container').classList.remove('hidden');
+            });
+        });
+
+        document.getElementById('challenges-view').addEventListener('click', (e) => {
+            if (e.target.classList.contains('generate-story-btn')) {
+                handleGenerateStory(e);
+            }
+        });
+        
+        document.getElementById('chatbot-form').addEventListener('submit', handleChatbotSubmit);
+
+        // Photo upload preview for Upload Photo section
+        const photoUploadInput = document.getElementById('photo-upload');
+        const photoPreview = document.getElementById('photo-preview');
+        const photoFilename = document.getElementById('photo-filename');
+        if (photoUploadInput) {
+            photoUploadInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) {
+                    photoPreview.innerHTML = `<i data-lucide="image-plus" class="h-12 w-12"></i><span class="mt-2 text-sm font-semibold">Choose Photo</span>`;
+                    photoFilename.textContent = '';
+                    lucide.createIcons();
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    photoPreview.innerHTML = `<img src="${ev.target.result}" alt="Preview" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">`;
+                    photoFilename.textContent = file.name;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // --- INITIALIZATION ---
+        setupAllModalListeners();
+        setupOnboardingListeners();
+        lucide.createIcons();
+
+        // Doubt form handling
+        if (doubtForm) {
+            doubtForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('doubt-name').value.trim();
+                const topic = document.getElementById('doubt-topic').value.trim();
+                const text = document.getElementById('doubt-text').value.trim();
+                if (!topic || !text) return;
+                try {
+                    // Optional: send to backend if available
+                    // await fetch('/submit_doubt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, topic, text }) });
+                    doubtForm.reset();
+                    doubtSuccess.classList.remove('hidden');
+                    setTimeout(() => doubtSuccess.classList.add('hidden'), 4000);
+                } catch (err) {
+                    alert('Could not submit right now. Please try again later.');
+                }
+            });
+        }
+
+        if (openAiFromDoubtsBtn) {
+            openAiFromDoubtsBtn.addEventListener('click', () => {
+                const text = (document.getElementById('doubt-text')?.value || '').trim();
+                openModal('chatbot');
+                const input = document.getElementById('chatbot-input');
+                if (text && input) {
+                    input.value = text;
+                    input.focus();
+                }
+            });
+        }
+    });
+    </script>
+    <!-- CXGenie Chatbot widget -->
+    <script src="https://widget.cxgenie.ai/widget.js" data-aid="3b03fe27-a83b-453e-91d1-5f1b23c7ce60" data-lang="en"></script>
+</body>
+</html>
+<script src="api.js"></script>
+<script src="plubic.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- your existing JS logic ---
+});
+</script>
+
+<!-- Chatbase and Botsonic widgets removed to prevent conflicts and Forbidden overlays -->
+  
+  <!-- CxGenie Chatbot -->
+  <script src="https://widget.cxgenie.ai/widget.js" data-aid="3b03fe27-a83b-453e-91d1-5f1b23c7ce60"
+      
+       data-lang="en"></script>
+</body>
+</html>
+
+<!-- Scripts for Google Translate -->
+<script>
+    function googleTranslateElementInit() {
+        console.log('Initializing Google Translate...');
+        try {
+            new google.translate.TranslateElement(
+                { pageLanguage: 'en' },
+                'google_translate_element'
+            );
+            console.log('Desktop Google Translate initialized');
+        } catch (error) {
+            console.error('Error initializing desktop Google Translate:', error);
+        }
+    }
+    
+    function googleTranslateElementInitMobile() {
+        console.log('Initializing Mobile Google Translate...');
+        try {
+            new google.translate.TranslateElement(
+                { pageLanguage: 'en' },
+                'google_translate_element_mobile'
+            );
+            console.log('Mobile Google Translate initialized');
+        } catch (error) {
+            console.error('Error initializing mobile Google Translate:', error);
+        }
+    }
+    
+    // Initialize both when Google Translate API loads
+    window.googleTranslateElementInit = googleTranslateElementInit;
+    window.googleTranslateElementInitMobile = googleTranslateElementInitMobile;
+    
+    // Fallback initialization after page load
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            if (typeof google !== 'undefined' && google.translate) {
+                console.log('Fallback: Initializing Google Translate after page load');
+                googleTranslateElementInit();
+                googleTranslateElementInitMobile();
+            } else {
+                console.log('Google Translate API not loaded yet, will retry...');
+                setTimeout(function() {
+                    if (typeof google !== 'undefined' && google.translate) {
+                        googleTranslateElementInit();
+                        googleTranslateElementInitMobile();
+                    }
+                }, 2000);
+            }
+        }, 1000);
+    });
+</script>
+<script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+<script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInitMobile"></script>

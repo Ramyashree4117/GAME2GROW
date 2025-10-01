@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Lite: Science Learning Edition</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+            color: white;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        
+        .game-container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            position: relative;
+        }
+        
+        h1 {
+            margin: 0 0 20px 0;
+            font-size: 2em;
+        }
+        
+        #gameCanvas {
+            border: 3px solid #fff;
+            background-color: #2c3e50;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            display: block;
+            margin: 10px auto;
+        }
+        
+        .info-panel {
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            min-height: 60px;
+        }
+        
+        #score {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 0 0 10px 0;
+        }
+        
+        #factDisplay {
+            font-size: 14px;
+            margin: 5px 0;
+            font-style: italic;
+            line-height: 1.3;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border-left: 4px solid #27ae60;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        
+        .controls {
+            margin: 10px 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        /* Arrow key layout */
+        .arrow-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr;
+            gap: 5px;
+            width: 180px;
+            height: 180px;
+            margin: 20px auto;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .arrow-btn {
+            width: 50px;
+            height: 50px;
+            border: none;
+            border-radius: 8px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .arrow-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .arrow-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Position arrows in grid */
+        .left-arrow { grid-column: 1; grid-row: 2; }
+        .up-arrow { grid-column: 2; grid-row: 1; }
+        .right-arrow { grid-column: 3; grid-row: 2; }
+        .down-arrow { grid-column: 2; grid-row: 3; }
+        
+        .empty-cell {
+            background: transparent;
+        }
+        
+        .game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .game-over-content {
+            background: white;
+            color: #333;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 300px;
+        }
+        
+        .restart-btn, .start-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        
+        .restart-btn:hover, .start-btn:hover {
+            background: #229954;
+        }
+
+        #gameStatus {
+            font-size: 18px;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        .key-status {
+            margin: 10px 0;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .speed-info {
+            font-size: 12px;
+            opacity: 0.8;
+            margin: 5px 0;
+        }
+
+        /* CLOUD SCIENCE FACT POPUP */
+        .science-fact-cloud {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+            border-radius: 25px;
+            padding: 25px 30px;
+            max-width: 400px;
+            max-height: 200px;
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8),
+                0 0 50px rgba(243, 156, 18, 0.5);
+            border: 3px solid rgba(243, 156, 18, 0.8);
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            font-family: 'Georgia', serif;
+            animation: cloudFloat 3s ease-in-out;
+        }
+
+        .science-fact-cloud.show {
+            display: flex;
+            animation: cloudAppear 0.5s ease-out, cloudFloat 3s ease-in-out 0.5s;
+        }
+
+        .cloud-header {
+            font-size: 18px;
+            font-weight: bold;
+            color: #f39c12;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .cloud-fact {
+            font-size: 14px;
+            color: #2c3e50;
+            line-height: 1.4;
+            font-style: italic;
+            margin: 10px 0;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+        }
+
+        .cloud-emoji {
+            font-size: 24px;
+            margin-right: 10px;
+            animation: bounce 1s ease-in-out;
+        }
+
+        .cloud-close {
+            background: rgba(243, 156, 18, 0.8);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .cloud-close:hover {
+            background: rgba(243, 156, 18, 1);
+            transform: scale(1.1);
+        }
+
+        @keyframes cloudAppear {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            100% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        @keyframes cloudFloat {
+            0%, 100% {
+                transform: translate(-50%, -50%) translateY(0px);
+            }
+            50% {
+                transform: translate(-50%, -50%) translateY(-10px);
+            }
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        /* FACTS LEARNED SCREEN */
+        .facts-learned-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1500;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .facts-learned-content {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            max-height: 80vh;
+            width: 90%;
+            color: #2c3e50;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            border: 3px solid rgba(243, 156, 18, 0.8);
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            0% {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .facts-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #f39c12;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .facts-summary {
+            font-size: 18px;
+            margin-bottom: 30px;
+            color: #34495e;
+            font-weight: 600;
+        }
+
+        .facts-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(243, 156, 18, 0.1);
+            border-radius: 15px;
+            border: 2px solid rgba(243, 156, 18, 0.3);
+            scroll-behavior: smooth; /* Smooth scrolling */
+        }
+
+        .fact-item {
+            display: flex;
+            align-items: center;
+            margin: 12px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 10px;
+            border-left: 4px solid #f39c12;
+            transition: all 0.2s ease;
+            animation: factAppear 0.5s ease-out forwards;
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+
+        .fact-item:nth-child(even) {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .fact-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .fact-emoji {
+            font-size: 20px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .fact-text {
+            flex-grow: 1;
+            font-size: 14px;
+            line-height: 1.4;
+            color: #2c3e50;
+        }
+
+        @keyframes factAppear {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .facts-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .review-btn {
+            background: #f39c12;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .review-btn:hover {
+            background: #e67e22;
+            transform: translateY(-2px);
+        }
+
+        .review-btn:active {
+            transform: translateY(0);
+        }
+
+        .review-btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s;
+        }
+
+        .review-btn.clicked::after {
+            width: 300px;
+            height: 300px;
+        }
+
+        .play-again-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .play-again-btn:hover {
+            background: #229954;
+            transform: translateY(-2px);
+        }
+
+        .close-facts-btn {
+            background: rgba(52, 73, 94, 0.8);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 15px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .close-facts-btn:hover {
+            background: rgba(52, 73, 94, 1);
+        }
+
+        .review-message {
+            color: #e67e22;
+            font-style: italic;
+            margin-top: 10px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .review-message.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🐍 Snake Science</h1>
+        
+        <div id="gameStatus">Click "Start Game" to begin!</div>
+        <div class="speed-info">🐌 Slower speed for easier learning!</div>
+        
+        <canvas id="gameCanvas" width="400" height="400"></canvas>
+        
+        <div class="controls">
+            <p><strong>Tap arrows below OR use keyboard!</strong></p>
+            <p>Eat red apples to learn science facts in clouds!</p>
+        </div>
+        
+        <!-- 4-Direction Arrow Key Layout -->
+        <div class="arrow-container">
+            <div class="empty-cell"></div>
+            <button class="arrow-btn up-arrow" id="upBtn" onclick="changeDirection('up')">↑</button>
+            <div class="empty-cell"></div>
+            
+            <button class="arrow-btn left-arrow" id="leftBtn" onclick="changeDirection('left')">←</button>
+            <div class="empty-cell"></div>
+            <button class="arrow-btn right-arrow" id="rightBtn" onclick="changeDirection('right')">→</button>
+            
+            <div class="empty-cell"></div>
+            <button class="arrow-btn down-arrow" id="downBtn" onclick="changeDirection('down')">↓</button>
+            <div class="empty-cell"></div>
+        </div>
+        
+        <button class="start-btn" onclick="startGame()">Start Game</button>
+        
+        <div class="info-panel">
+            <div id="score">Score: 0</div>
+            <div id="factDisplay">Press Start to begin learning science!</div>
+        </div>
+        
+        <div class="key-status" id="keyStatus">Tap arrow buttons or use arrow keys/WASD!</div>
+    </div>
+
+    <!-- CLOUD SCIENCE FACT POPUP -->
+    <div class="science-fact-cloud" id="scienceCloud">
+        <div class="cloud-header">🌟 Science Fact Learned!</div>
+        <div class="cloud-emoji" id="cloudEmoji">🍎</div>
+        <div class="cloud-fact" id="cloudFactText"></div>
+        <button class="cloud-close" onclick="closeScienceCloud()">×</button>
+    </div>
+
+    <!-- FACTS LEARNED SCREEN -->
+    <div class="facts-learned-screen" id="factsLearnedScreen">
+        <div class="facts-learned-content">
+            <div class="facts-title">📚 Science Facts Learned!</div>
+            <div class="facts-summary" id="factsSummary"></div>
+            
+            <div class="facts-list" id="factsList">
+                <!-- Facts will be populated here -->
+            </div>
+            
+            <div class="facts-buttons">
+                <button class="review-btn" id="reviewBtn" onclick="reviewFacts()">🔍 Review Facts</button>
+                <button class="play-again-btn" onclick="restartGame()">🎮 Play Again</button>
+            </div>
+            
+            <div class="review-message" id="reviewMessage"></div>
+            
+            <button class="close-facts-btn" onclick="closeFactsScreen()">✕ Close</button>
+        </div>
+    </div>
+
+    <div class="game-over" id="gameOver">
+        <div class="game-over-content">
+            <h2>Game Over!</h2>
+            <p id="finalScore"></p>
+            <button class="restart-btn" onclick="showFactsLearned()">📚 See Facts Learned</button>
+            <button class="restart-btn" onclick="restartGame()" style="margin-top: 10px;">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // Get canvas and context
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gridSize = 20;
+        const tileCount = canvas.width / gridSize;
+
+        // Game variables
+        let snake = [{x: 10, y: 10}];
+        let food = {};
+        let dx = 0;
+        let dy = 0;
+        let score = 0;
+        let gameRunning = false;
+        let gameInterval;
+        let learnedFacts = []; // Track learned facts
+
+        // Initialize food position
+        function initFood() {
+            do {
+                food = {
+                    x: Math.floor(Math.random() * tileCount),
+                    y: Math.floor(Math.random() * tileCount)
+                };
+            } while (snake.some(segment => segment.x === food.x && segment.y === food.y));
+            console.log('🍎 Initial food at:', food.x, food.y);
+        }
+
+        // Science facts with emojis
+        const scienceFacts = [
+            { text: "Photosynthesis: Plants use sunlight to convert CO₂ and water into glucose and oxygen!", emoji: "🌱" },
+            { text: "Newton's 1st Law: Objects stay at rest or in motion unless acted on by a force.", emoji: "⚖️" },
+            { text: "DNA: The molecule that carries genetic instructions for all living organisms.", emoji: "🧬" },
+            { text: "Gravity: The force that attracts objects toward Earth's center (9.8 m/s²).", emoji: "🌍" },
+            { text: "Cell Theory: All living things are made of cells, the basic unit of life.", emoji: "🔬" },
+            { text: "Atoms: Tiny particles made of protons, neutrons, and electrons.", emoji: "⚛️" },
+            { text: "Water Cycle: Evaporation → Condensation → Precipitation → Collection.", emoji: "🌊" },
+            { text: "Periodic Table: Elements organized by atomic number, from Hydrogen (1) to Oganesson (118).", emoji: "🧪" },
+            { text: "Evolution: Species change over time through natural selection (Darwin).", emoji: "🌿" },
+            { text: "Plate Tectonics: Earth's crust moves, causing earthquakes and volcanoes.", emoji: "🌪️" },
+            { text: "E=mc²: Energy equals mass times the speed of light squared (Einstein).", emoji: "🧠" },
+            { text: "Chemical Bonds: Atoms join by sharing (covalent) or transferring (ionic) electrons.", emoji: "🔗" },
+            { text: "Mitosis: Cell division that creates identical copies for growth and repair.", emoji: "🦠" },
+            { text: "Black Holes: Regions where gravity is so strong, not even light can escape.", emoji: "🌌" },
+            { text: "Biodiversity: Variety of life forms essential for healthy ecosystems.", emoji: "🌈" }
+        ];
+
+        // Draw round apple with shine and shadow
+        function drawApple(x, y) {
+            const centerX = x * gridSize + gridSize / 2;
+            const centerY = y * gridSize + gridSize / 2;
+            const radius = gridSize / 2 - 1;
+            
+            // Shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.beginPath();
+            ctx.arc(centerX + 2, centerY + 2, radius, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Main apple body
+            ctx.fillStyle = '#e74c3c';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Highlight/light reflection
+            const gradient = ctx.createRadialGradient(
+                centerX - radius/3, centerY - radius/3, 0,
+                centerX - radius/3, centerY - radius/3, radius/2
+            );
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(centerX - radius/3, centerY - radius/3, radius/2, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Stem
+            ctx.strokeStyle = '#8b4513';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(centerX - radius/2, centerY - radius);
+            ctx.lineTo(centerX - radius/3, centerY - radius - 3);
+            ctx.stroke();
+            
+            // Leaf
+            ctx.fillStyle = '#228B22';
+            ctx.beginPath();
+            ctx.ellipse(centerX - radius/2.5, centerY - radius - 2, 3, 2, 0, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        // Draw cylindrical snake segments with 3D effect
+        function drawSnakeSegment(x, y, isHead = false) {
+            const centerX = x * gridSize + gridSize / 2;
+            const centerY = y * gridSize + gridSize / 2;
+            
+            if (isHead) {
+                // Head - brighter with eyes
+                const headGradient = ctx.createLinearGradient(centerX - gridSize/2, centerY, centerX + gridSize/2, centerY);
+                headGradient.addColorStop(0, '#2ecc71');
+                headGradient.addColorStop(1, '#27ae60');
+                
+                // Main body
+                ctx.fillStyle = headGradient;
+                ctx.fillRect(x * gridSize + 1, y * gridSize + 1, gridSize - 2, gridSize - 2);
+                
+                // Top highlight
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.fillRect(x * gridSize + 1, y * gridSize + 1, gridSize - 2, 3);
+                
+                // Side highlights
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.fillRect(x * gridSize + 1, y * gridSize + 2, 3, gridSize - 4);
+                ctx.fillRect(x * gridSize + gridSize - 4, y * gridSize + 2, 3, gridSize - 4);
+                
+                // Eyes
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(centerX - 4, centerY - 3, 2, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(centerX + 4, centerY - 3, 2, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                ctx.fillStyle = 'black';
+                ctx.beginPath();
+                ctx.arc(centerX - 4, centerY - 3, 1, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(centerX + 4, centerY - 3, 1, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Mouth
+                ctx.strokeStyle = 'black';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(centerX - 2, centerY + 2);
+                ctx.lineTo(centerX + 2, centerY + 2);
+                ctx.stroke();
+                
+            } else {
+                // Body segments - cylindrical effect
+                const bodyGradient = ctx.createLinearGradient(centerX - gridSize/2, centerY, centerX + gridSize/2, centerY);
+                bodyGradient.addColorStop(0, '#2ecc71');
+                bodyGradient.addColorStop(0.5, '#27ae60');
+                bodyGradient.addColorStop(1, '#229954');
+                
+                // Main body
+                ctx.fillStyle = bodyGradient;
+                ctx.fillRect(x * gridSize + 1, y * gridSize + 1, gridSize - 2, gridSize - 2);
+                
+                // Top highlight
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.fillRect(x * gridSize + 1, y * gridSize + 1, gridSize - 2, 2);
+                
+                // Side highlights
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.fillRect(x * gridSize + 1, y * gridSize + 2, 2, gridSize - 4);
+                ctx.fillRect(x * gridSize + gridSize - 3, y * gridSize + 2, 2, gridSize - 4);
+                
+                // Shadow
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                ctx.fillRect(x * gridSize + 2, y * gridSize + gridSize - 2, gridSize - 4, 1);
+            }
+        }
+
+        // Draw the game
+        function drawGame() {
+            // Clear canvas with grid lines
+            ctx.fillStyle = '#34495e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw grid
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= tileCount; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * gridSize, 0);
+                ctx.lineTo(i * gridSize, canvas.height);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(0, i * gridSize);
+                ctx.lineTo(canvas.width, i * gridSize);
+                ctx.stroke();
+            }
+
+            // Draw snake
+            snake.forEach((segment, index) => {
+                drawSnakeSegment(segment.x, segment.y, index === 0);
+            });
+
+            // Draw food (round apple)
+            drawApple(food.x, food.y);
+        }
+
+        // Show science fact in cloud popup
+        function showScienceCloud(factIndex) {
+            const fact = scienceFacts[factIndex];
+            const cloud = document.getElementById('scienceCloud');
+            const cloudEmoji = document.getElementById('cloudEmoji');
+            const cloudFactText = document.getElementById('cloudFactText');
+            
+            // Add to learned facts (unique)
+            if (!learnedFacts.includes(factIndex)) {
+                learnedFacts.push(factIndex);
+            }
+            
+            // Set content
+            cloudEmoji.textContent = fact.emoji;
+            cloudFactText.textContent = fact.text;
+            
+            // Show cloud
+            cloud.classList.add('show');
+            
+            // Auto-close after 4 seconds
+            setTimeout(() => {
+                closeScienceCloud();
+            }, 4000);
+            
+            console.log('☁️ Science cloud shown:', fact.emoji, fact.text);
+            console.log('📚 Total unique facts learned:', learnedFacts.length);
+        }
+
+        // Close science cloud
+        function closeScienceCloud() {
+            const cloud = document.getElementById('scienceCloud');
+            cloud.classList.remove('show');
+        }
+
+        // Show facts learned screen
+        function showFactsLearned() {
+            const factsSummary = document.getElementById('factsSummary');
+            const factsList = document.getElementById('factsList');
+            const factsLearnedScreen = document.getElementById('factsLearnedScreen');
+            const reviewBtn = document.getElementById('reviewBtn');
+            const reviewMessage = document.getElementById('reviewMessage');
+            
+            // Update summary
+            factsSummary.innerHTML = `🎉 Congratulations! You learned <strong>${learnedFacts.length}</strong> unique science facts!`;
+            
+            // Clear and populate facts list
+            factsList.innerHTML = '';
+            
+            learnedFacts.forEach((factIndex, index) => {
+                const fact = scienceFacts[factIndex];
+                const factItem = document.createElement('div');
+                factItem.className = 'fact-item';
+                factItem.style.animationDelay = `${index * 0.1}s`;
+                
+                factItem.innerHTML = `
+                    <span class="fact-emoji">${fact.emoji}</span>
+                    <div class="fact-text">${fact.text}</div>
+                `;
+                
+                factsList.appendChild(factItem);
+            });
+            
+            // Reset review button and message
+            reviewBtn.classList.remove('clicked');
+            reviewMessage.classList.remove('show');
+            reviewMessage.textContent = '';
+            
+            // Check if scrollable
+            setTimeout(() => {
+                if (factsList.scrollHeight <= factsList.clientHeight) {
+                    reviewBtn.textContent = '👁️ All Facts Visible!';
+                    reviewBtn.disabled = true;
+                    reviewBtn.style.opacity = '0.6';
+                } else {
+                    reviewBtn.textContent = '🔍 Scroll to Top';
+                    reviewBtn.disabled = false;
+                    reviewBtn.style.opacity = '1';
+                }
+            }, 500); // Wait for animation
+            
+            // Show screen
+            factsLearnedScreen.style.display = 'flex';
+        }
+
+        // FIXED: Review facts function with feedback
+        function reviewFacts() {
+            const factsList = document.getElementById('factsList');
+            const reviewBtn = document.getElementById('reviewBtn');
+            const reviewMessage = document.getElementById('reviewMessage');
+            
+            console.log('🔍 Review button clicked! Scrolling to top...');
+            
+            // Add click effect
+            reviewBtn.classList.add('clicked');
+            setTimeout(() => {
+                reviewBtn.classList.remove('clicked');
+            }, 300);
+            
+            // Scroll to top smoothly
+            factsList.scrollTop = 0;
+            
+            // Show feedback message
+            reviewMessage.textContent = 'Scrolled to top! 📚';
+            reviewMessage.classList.add('show');
+            
+            setTimeout(() => {
+                reviewMessage.classList.remove('show');
+            }, 2000);
+        }
+
+        // Close facts learned screen
+        function closeFactsScreen() {
+            document.getElementById('factsLearnedScreen').style.display = 'none';
+        }
+
+        // Update game state
+        function updateGame() {
+            if (!gameRunning) return;
+
+            // Store current head position BEFORE moving
+            const currentHead = {x: snake[0].x, y: snake[0].y};
+            
+            // Calculate new head position
+            const newHead = {x: snake[0].x + dx, y: snake[0].y + dy};
+
+            // Check wall collision FIRST
+            if (newHead.x < 0 || newHead.x >= tileCount || newHead.y < 0 || newHead.y >= tileCount) {
+                gameOver();
+                return;
+            }
+
+            // Check self collision (exclude current head position)
+            for (let i = 1; i < snake.length; i++) {
+                if (newHead.x === snake[i].x && newHead.y === snake[i].y) {
+                    gameOver();
+                    return;
+                }
+            }
+
+            // Move snake - add new head FIRST
+            snake.unshift(newHead);
+
+            // NOW check food collision with the NEW head position
+            let ateFood = false;
+            if (newHead.x === food.x && newHead.y === food.y) {
+                ateFood = true;
+                console.log('✅ COLLISION DETECTED! Snake head:', newHead.x, newHead.y, 'Food:', food.x, food.y);
+                
+                // DON'T remove tail - snake grows
+                score++;
+                document.getElementById('score').textContent = 'Score: ' + score;
+                document.getElementById('factDisplay').textContent = `Yum! Learned fact #${score}! ☁️`;
+                
+                // SHOW SCIENCE FACT IN CLOUD
+                const randomFactIndex = Math.floor(Math.random() * scienceFacts.length);
+                setTimeout(() => {
+                    showScienceCloud(randomFactIndex);
+                }, 200); // Small delay for smooth effect
+                
+                console.log('📚 Science fact shown in cloud!');
+                
+                // Generate new food after cloud appears
+                setTimeout(generateFood, 500);
+            } else {
+                // Remove tail if didn't eat food
+                snake.pop();
+            }
+        }
+
+        // Generate food at random position
+        function generateFood() {
+            let attempts = 0;
+            do {
+                food.x = Math.floor(Math.random() * tileCount);
+                food.y = Math.floor(Math.random() * tileCount);
+                attempts++;
+            } while (snake.some(segment => segment.x === food.x && segment.y === food.y) && attempts < 50);
+            
+            if (attempts >= 50) {
+                // If can't find position, just use random
+                food.x = Math.floor(Math.random() * tileCount);
+                food.y = Math.floor(Math.random() * tileCount);
+            }
+            
+            console.log('🍎 New food generated at:', food.x, food.y);
+        }
+
+        // Change direction - works for both buttons and keyboard
+        function changeDirection(direction) {
+            if (!gameRunning) return;
+
+            // Prevent opposite direction changes
+            const goingUp = dy === -1;
+            const goingDown = dy === 1;
+            const goingRight = dx === 1;
+            const goingLeft = dx === -1;
+
+            if (direction === 'left' && !goingRight) {
+                dx = -1;
+                dy = 0;
+                updateStatus('Moving Left ←');
+            }
+            else if (direction === 'up' && !goingDown) {
+                dx = 0;
+                dy = -1;
+                updateStatus('Moving Up ↑');
+            }
+            else if (direction === 'right' && !goingLeft) {
+                dx = 1;
+                dy = 0;
+                updateStatus('Moving Right →');
+            }
+            else if (direction === 'down' && !goingUp) {
+                dx = 0;
+                dy = 1;
+                updateStatus('Moving Down ↓');
+            }
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', function(event) {
+            if (!gameRunning) return;
+            
+            switch(event.key) {
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    event.preventDefault();
+                    changeDirection('left');
+                    break;
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    event.preventDefault();
+                    changeDirection('up');
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    event.preventDefault();
+                    changeDirection('right');
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    event.preventDefault();
+                    changeDirection('down');
+                    break;
+            }
+        });
+
+        // Update status display
+        function updateStatus(message) {
+            document.getElementById('keyStatus').textContent = message;
+            setTimeout(() => {
+                document.getElementById('keyStatus').textContent = 'Tap arrow buttons or use arrow keys/WASD!';
+            }, 800);
+        }
+
+        // Start the game
+        function startGame() {
+            console.log('🎮 Game starting...');
+            
+            // Reset game state
+            snake = [{x: 10, y: 10}];
+            dx = 1; // Start moving right
+            dy = 0;
+            score = 0;
+            learnedFacts = []; // Reset learned facts
+            gameRunning = true;
+            
+            // Initialize food
+            initFood();
+            
+            // Update UI
+            document.getElementById('score').textContent = 'Score: 0';
+            document.getElementById('factDisplay').textContent = '🐍 Snake is moving! Eat apples for science clouds!';
+            document.getElementById('gameStatus').textContent = 'Game Started! 🐌 Moving slowly...';
+            updateStatus('Started moving right →');
+            
+            // Close any open cloud and facts screen
+            closeScienceCloud();
+            closeFactsScreen();
+            
+            // Clear any existing interval
+            if (gameInterval) {
+                clearInterval(gameInterval);
+            }
+            
+            // Start game loop - SLOWER SPEED
+            drawGame();
+            gameInterval = setInterval(() => {
+                updateGame();
+                drawGame();
+            }, 400);
+            
+            console.log('✅ Game loop started. Snake:', snake, 'Food:', food);
+        }
+
+        // Game over
+        function gameOver() {
+            gameRunning = false;
+            clearInterval(gameInterval);
+            document.getElementById('finalScore').textContent = 'Final Score: ' + score;
+            document.getElementById('gameOver').style.display = 'flex';
+            document.getElementById('gameStatus').textContent = 'Game Over! Click below to see what you learned.';
+            document.getElementById('factDisplay').textContent = `🌟 Total science facts learned: ${learnedFacts.length}`;
+            console.log('💀 Game Over! Final score:', score, 'Facts learned:', learnedFacts.length);
+        }
+
+        // Restart game
+        function restartGame() {
+            document.getElementById('gameOver').style.display = 'none';
+            closeFactsScreen();
+            startGame();
+        }
+
+        // Initial setup
+        initFood();
+        drawGame();
+    </script>
+</body>
+</html>

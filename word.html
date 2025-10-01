@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spelling Game</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: linear-gradient(180deg, #fdf6e3, #f0f9ff);
+      overflow-x: hidden;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 1rem;
+      background: #4a5568;
+      color: white;
+      font-size: clamp(1.5rem, 5vw, 2rem);
+    }
+
+    #gameArea {
+      position: relative;
+      width: 100%;
+      height: 60vh;
+      min-height: 300px;
+      overflow: hidden;
+      background: #edf2f7;
+      border-top: 2px solid #4a5568;
+      border-bottom: 2px solid #4a5568;
+      touch-action: manipulation; /* Improve touch responsiveness */
+    }
+
+    .letter {
+      position: absolute;
+      font-size: clamp(1.5rem, 5vw, 2rem);
+      font-weight: bold;
+      color: #2d3748;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.3s;
+      touch-action: none; /* Prevent default touch behaviors */
+    }
+
+    .letter.clicked {
+      color: #3182ce;
+      transform: scale(1.3);
+    }
+
+    #controls {
+      margin: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    #wordInput {
+      padding: 0.5rem;
+      font-size: clamp(1rem, 3vw, 1.2rem);
+      width: min(80%, 300px);
+      border-radius: 8px;
+      border: 1px solid #4a5568;
+    }
+
+    #spellingBox {
+      margin: 1rem;
+      font-size: clamp(1.2rem, 4vw, 1.5rem);
+      font-weight: bold;
+      letter-spacing: 0.2rem;
+      color: #2d3748;
+    }
+
+    #score {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      font-size: clamp(1rem, 3vw, 1.2rem);
+      font-weight: bold;
+      color: white;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 0.5rem;
+      border-radius: 4px;
+    }
+
+    #gameOver {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border: 2px solid #4a5568;
+      padding: 1rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      max-width: 90%;
+      width: 300px;
+      z-index: 10;
+    }
+
+    button {
+      padding: 0.5rem 1rem;
+      font-size: clamp(0.9rem, 2.5vw, 1rem);
+      cursor: pointer;
+      border-radius: 8px;
+      border: none;
+      background: #4a5568;
+      color: white;
+      touch-action: manipulation;
+    }
+
+    button:hover {
+      background: #2d3748;
+    }
+
+    @media (max-width: 600px) {
+      header {
+        padding: 0.5rem;
+      }
+
+      #gameArea {
+        height: 50vh;
+        min-height: 200px;
+      }
+
+      .letter {
+        font-size: clamp(1.2rem, 4vw, 1.5rem);
+      }
+
+      #spellingBox {
+        font-size: clamp(1rem, 3.5vw, 1.2rem);
+        letter-spacing: 0.1rem;
+      }
+
+      #gameOver {
+        padding: 0.75rem;
+        width: 80%;
+      }
+    }
+
+    @media (max-width: 400px) {
+      #wordInput {
+        width: 90%;
+      }
+
+      button {
+        width: 100%;
+        max-width: 200px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Spelling Game</h1>
+  </header>
+
+  <div id="controls">
+    <input type="text" id="wordInput" placeholder="Enter a word" />
+    <button onclick="startGame()">Start Game</button>
+  </div>
+
+  <div id="score">Score: 0</div>
+  <div id="gameArea"></div>
+  <div id="spellingBox">Your Word: </div>
+
+  <div id="gameOver">
+    <h2 id="resultText"></h2>
+    <button onclick="restartGame()">Play Again</button>
+  </div>
+
+  <script>
+    const gameArea = document.getElementById("gameArea");
+    const spellingBox = document.getElementById("spellingBox");
+    const gameOverScreen = document.getElementById("gameOver");
+    const resultText = document.getElementById("resultText");
+    const scoreDisplay = document.getElementById("score");
+
+    let word = "";
+    let collected = "";
+    let gameActive = false;
+    let fallInterval;
+    let letters = [];
+    let currentIndex = 0;
+    let score = 0;
+    const fallSpeed = 0.25; // Uniform speed
+
+    function startGame() {
+      word = document.getElementById("wordInput").value.trim().toUpperCase();
+      if (!word) return alert("Please enter a word!");
+
+      resetGame();
+      gameActive = true;
+
+      // Drop letters from the word every 2 seconds
+      fallInterval = setInterval(() => {
+        const char = word[Math.floor(Math.random() * word.length)];
+        spawnLetter(char);
+      }, 2000);
+
+      requestAnimationFrame(updateFalling);
+    }
+
+    function resetGame() {
+      clearInterval(fallInterval);
+      gameArea.innerHTML = "";
+      collected = "";
+      spellingBox.textContent = "Your Word: ";
+      gameOverScreen.style.display = "none";
+      letters = [];
+      currentIndex = 0;
+      score = 0;
+      scoreDisplay.textContent = "Score: 0";
+    }
+
+    function spawnLetter(char) {
+      const letterEl = document.createElement("div");
+      letterEl.textContent = char;
+      letterEl.className = "letter";
+      const maxLeft = gameArea.clientWidth - 40; // Ensure letter fits within game area
+      letterEl.style.left = Math.random() * (maxLeft < 0 ? 0 : maxLeft) + "px";
+      letterEl.style.top = "0px";
+      letterEl.dataset.char = char;
+
+      // Add both click and touch events for compatibility
+      letterEl.addEventListener("click", () => selectLetter(letterEl));
+      letterEl.addEventListener("touchstart", (e) => {
+        e.preventDefault(); // Prevent scrolling on touch
+        selectLetter(letterEl);
+      });
+
+      gameArea.appendChild(letterEl);
+      letters.push({ el: letterEl, y: 0 });
+    }
+
+    function updateFalling() {
+      if (!gameActive) return;
+
+      for (let i = letters.length - 1; i >= 0; i--) {
+        const letter = letters[i];
+        letter.y += fallSpeed;
+        letter.el.style.top = letter.y + "px";
+
+        if (letter.y > gameArea.clientHeight - 40) {
+          letter.el.remove();
+          letters.splice(i, 1);
+        }
+      }
+
+      requestAnimationFrame(updateFalling);
+    }
+
+    function selectLetter(letterEl) {
+      if (!gameActive) return;
+
+      const selectedChar = letterEl.dataset.char;
+      collected += selectedChar;
+      spellingBox.textContent = "Your Word: " + collected;
+
+      letterEl.classList.add("clicked");
+      setTimeout(() => letterEl.remove(), 300);
+
+      // Check correctness immediately
+      if (selectedChar !== word[currentIndex]) {
+        endGame(false);
+        return;
+      }
+
+      currentIndex++;
+      score++;
+      scoreDisplay.textContent = "Score: " + score;
+
+      if (currentIndex === word.length) {
+        endGame(true);
+      }
+    }
+
+    function endGame(win) {
+      gameActive = false;
+      clearInterval(fallInterval);
+      resultText.textContent = win ? "🎉 Correct! Well done!" : "❌ Wrong letter! Game Over!";
+      gameOverScreen.style.display = "block";
+    }
+
+    function restartGame() {
+      resetGame();
+      document.getElementById("wordInput").value = "";
+    }
+
+    // Adjust game area on window resize
+    window.addEventListener('resize', () => {
+      letters.forEach(letter => {
+        const maxLeft = gameArea.clientWidth - 40;
+        const currentLeft = parseFloat(letter.el.style.left);
+        if (currentLeft > maxLeft) {
+          letter.el.style.left = maxLeft + "px";
+        }
+      });
+    });
+  </script>
+</body>
+</html>

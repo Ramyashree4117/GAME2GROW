@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10-12 Years - Subjects - GAME2GROW</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/lucide.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            scroll-behavior: smooth;
+        }
+        .font-nunito {
+            font-family: 'Nunito', sans-serif;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+        .subject-card, .topic-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+        .subject-card:hover, .topic-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+        header {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            z-index: 50 !important;
+            height: 80px !important;
+            background-color: rgba(255, 255, 255, 0.8) !important;
+            backdrop-filter: blur(16px) !important;
+        }
+        main {
+            margin-top: 80px !important;
+            padding-top: 2rem !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <header class="bg-white/80 backdrop-blur-lg shadow-sm">
+        <nav class="container mx-auto px-6 py-4 h-full">
+            <div class="flex justify-between items-center h-full">
+                <a href="home.html" class="flex items-center space-x-2">
+                    <div class="bg-blue-500 p-2 rounded-lg"><i data-lucide="gamepad-2" class="text-white"></i></div>
+                    <span class="text-2xl font-bold font-nunito text-blue-600">GAME2GROW</span>
+                </a>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="home.html#about" class="text-gray-600 hover:text-blue-500">About</a>
+                    <a href="subjects.html" class="text-blue-500 font-semibold">Subjects</a>
+                    <a href="home.html#leaderboard" class="text-gray-600 hover:text-blue-500">Leaderboard</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="pb-8">
+        <section class="relative py-12 overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-b from-blue-50 to-gray-50 -z-10"></div>
+            <div class="container mx-auto px-6 text-center">
+                <h1 class="text-4xl md:text-6xl font-extrabold font-nunito text-gray-900">Subjects for <span class="text-blue-600">10-12 Years</span></h1>
+                <p class="mt-6 text-lg text-gray-600">Advanced learning modules to challenge and inspire.</p>
+            </div>
+        </section>
+
+        <section class="py-12">
+            <div class="container mx-auto px-6">
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <!-- Subjects Cards -->
+                    <div class="subject-card bg-white p-6 rounded-2xl shadow-lg border-2">
+                        <h3 class="text-2xl font-bold text-gray-800">Social Studies</h3>
+                    </div>
+                    <div class="subject-card bg-white p-6 rounded-2xl shadow-lg border-2">
+                        <h3 class="text-2xl font-bold text-gray-800">Science</h3>
+                    </div>
+                    <div class="subject-card bg-white p-6 rounded-2xl shadow-lg border-2">
+                        <h3 class="text-2xl font-bold text-gray-800">Mathematics</h3>
+                    </div>
+                    <div class="subject-card bg-white p-6 rounded-2xl shadow-lg border-2">
+                        <h3 class="text-2xl font-bold text-gray-800">English</h3>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

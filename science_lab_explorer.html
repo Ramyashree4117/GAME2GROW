@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Science Lab Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #6dd5ed, #2193b0);
+            user-select: none;
+        }
+        .chemical-vial {
+            cursor: grab;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            position: relative; /* Needed for the highlight */
+            border: 1px solid rgba(255, 255, 255, 0.3); /* Subtle glass edge */
+            background: rgba(255, 255, 255, 0.1); /* Slight tint */
+        }
+        /* Add a glossy highlight to the vials */
+        .chemical-vial::after {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 15px;
+            width: 12px;
+            height: 60%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.7), rgba(255,255,255,0));
+            border-radius: 6px;
+            transform: rotate(10deg);
+        }
+        .chemical-vial:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.7);
+        }
+        .beaker-dropzone {
+            transition: background-color 0.3s, transform 0.3s;
+        }
+        .beaker-dropzone.drag-over {
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+        .bubble {
+            position: absolute;
+            bottom: 10px;
+            width: 15px;
+            height: 15px;
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            animation: rise 2s infinite ease-in;
+            opacity: 0;
+        }
+        @keyframes rise {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-150px); opacity: 0; }
+        }
+        .smoke {
+            position: absolute;
+            bottom: 150px;
+            left: 50%;
+            width: 50px;
+            height: 50px;
+            background: rgba(200, 200, 200, 0.6);
+            border-radius: 50%;
+            filter: blur(20px);
+            transform: translateX(-50%);
+            animation: smoke-rise 3s infinite;
+            opacity: 0;
+        }
+        @keyframes smoke-rise {
+            0% { opacity: 0; transform: translate(-50%, 0) scale(1); }
+            50% { opacity: 0.8; }
+            100% { opacity: 0; transform: translate(-50%, -100px) scale(2.5); }
+        }
+        .modal-scrollbar::-webkit-scrollbar { width: 8px; }
+        .modal-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px;}
+        .modal-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 10px;}
+        .modal-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div id="game-container" class="w-full max-w-4xl bg-white/30 backdrop-blur-xl rounded-2xl shadow-2xl p-6 text-center text-gray-800 hidden">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-4 border-b-2 border-white/50 pb-3">
+            <h1 class="text-3xl font-bold text-white">Science Lab Explorer</h1>
+            <div class="flex items-center space-x-4 text-white">
+                <div class="text-lg">Level: <span id="level-display" class="font-bold">1</span></div>
+                <div class="text-lg">Score: <span id="score-display" class="font-bold">0</span></div>
+                <div id="timer-container" class="text-lg hidden">Time: <span id="time-display" class="font-bold">60</span>s</div>
+            </div>
+        </header>
+
+        <!-- Main Game Area -->
+        <main class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Chemicals Shelf -->
+            <div id="chemicals-shelf" class="bg-white/20 rounded-xl p-4 flex flex-col items-center space-y-4 h-full">
+                <h2 class="text-xl font-semibold text-white mb-2">Chemicals</h2>
+            </div>
+
+            <!-- Lab Bench -->
+            <div id="lab-bench" class="col-span-2 bg-white/20 rounded-xl p-4 flex flex-col justify-between items-center relative">
+                <p id="instruction" class="text-lg font-semibold text-white h-12">Drag two chemicals into the beaker to mix!</p>
+                <div id="beaker-dropzone" class="relative w-48 h-64 beaker-dropzone flex justify-center items-end">
+                    <svg class="absolute bottom-0 w-full h-full" viewBox="0 0 100 120" preserveAspectRatio="none">
+                        <!-- Glass highlight -->
+                        <path d="M25 15 C 40 40, 40 80, 25 105" fill="none" stroke="rgba(255, 255, 255, 0.5)" stroke-width="3" stroke-linecap="round" />
+                        <!-- Main beaker shape -->
+                        <path d="M10 110 L20 10 L80 10 L90 110 Z" fill="rgba(255, 255, 255, 0.15)" stroke="rgba(255, 255, 255, 0.5)" stroke-width="1.5"/>
+                        <!-- Top rim -->
+                        <path d="M19,10 C 19,2, 81,2, 81,10 C 81,18, 19,18, 19,10 Z" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
+                        <!-- Measurement lines -->
+                        <path d="M28 90 H 40 M 28 70 H 40 M 28 50 H 40 M 28 30 H 40" stroke="rgba(255, 255, 255, 0.6)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                    </svg>
+                    <div id="beaker-liquid" class="w-[85%] h-1/3 bg-blue-400 rounded-b-lg transition-all duration-500"></div>
+                    <div id="reaction-effects" class="absolute inset-0"></div>
+                </div>
+                 <div class="h-12 mt-4"><p id="mixed-chemicals-display" class="text-white font-medium text-md"></p></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Syllabus Modal -->
+    <div id="syllabus-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-lg text-left">
+            <h2 class="text-3xl font-bold mb-4 text-center text-gray-800">Welcome to the Lab!</h2>
+            <p class="text-center mb-6 text-gray-600">Read the rules and see how the difficulty increases as you become a better chemist!</p>
+            <div class="space-y-6">
+                 <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                    <h3 class="font-bold text-xl text-yellow-600">Game Rules</h3>
+                    <ul class="ml-4 mt-2 text-gray-700 list-disc list-inside space-y-1">
+                        <li>Drag two chemicals from the shelf into the beaker.</li>
+                        <li>Predict the correct reaction from the choices provided.</li>
+                        <li>Correct answers earn points and unlock the next level.</li>
+                        <li>Use the 'Hint' and 'Full Explanation' buttons to learn more!</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold text-xl text-blue-600">Levels 1-3: Chemistry Basics</h3>
+                    <p class="ml-4 text-gray-700">- Learn fundamental reactions with no pressure.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-xl text-green-600">Levels 4-7: Difficulty Increases</h3>
+                    <p class="ml-4 text-gray-700">- **Distractor chemicals are added!** You'll need to choose your mix carefully.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-xl text-purple-600">Levels 8-12: The Final Challenge</h3>
+                    <p class="ml-4 text-gray-700">- **A timer begins!** Earn speed bonuses for quick, correct answers.</p>
+                </div>
+            </div>
+            <div class="text-center mt-8">
+                <button id="start-game-btn" class="bg-blue-500 text-white font-bold py-3 px-8 rounded-full hover:bg-blue-600 transition-colors text-lg">Start Exploring</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prediction Modal -->
+    <div id="prediction-modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md text-center">
+            <h2 class="text-2xl font-bold mb-4">What will happen?</h2>
+            <p id="prediction-question" class="mb-6 text-gray-600">You mixed <span id="chem-a-name" class="font-bold"></span> and <span id="chem-b-name" class="font-bold"></span>. Predict the result!</p>
+            <div id="options-container" class="grid grid-cols-1 gap-4"></div>
+            <div class="mt-6">
+                <button id="hint-btn" class="text-blue-500 hover:text-blue-700 font-semibold">Need a Hint?</button>
+                <p id="hint-text" class="hidden mt-2 text-sm text-gray-500 bg-gray-100 p-2 rounded-lg"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Modal -->
+    <div id="feedback-modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div id="feedback-content" class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md text-center transform transition-all duration-300 scale-95 opacity-0">
+            <h2 id="feedback-title" class="text-3xl font-bold mb-4"></h2>
+            <p id="feedback-text" class="mb-6 text-gray-600"></p>
+            <div class="flex justify-center space-x-4">
+                <button id="explanation-btn" class="bg-purple-500 text-white font-bold py-2 px-6 rounded-full hover:bg-purple-600 transition-colors">Full Explanation</button>
+                <button id="next-level-btn" class="bg-blue-500 text-white font-bold py-2 px-6 rounded-full hover:bg-blue-600 transition-colors">Next Level</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Explanation Modal -->
+    <div id="explanation-modal-container" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-lg text-left">
+            <h2 id="explanation-title" class="text-2xl font-bold mb-4 text-gray-800"></h2>
+            <div id="explanation-text" class="text-gray-600 max-h-64 overflow-y-auto modal-scrollbar pr-2"></div>
+            <div class="text-center mt-6">
+                <button id="close-explanation-btn" class="bg-gray-500 text-white font-bold py-2 px-6 rounded-full hover:bg-gray-600 transition-colors">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let currentLevel = 0;
+        let score = 0;
+        let timer;
+        let timeLeft = 60;
+        let selectedChemicals = [];
+        
+        const gameLevels = [
+          { level: 1, chemicalA: { name: "Vinegar", color: "#E5DDCB" }, chemicalB: { name: "Baking Soda", color: "#FFFFFF" }, distractors: [{ name: "Water", color: "#A7D7F3" }], reaction: "Fizzing and bubbles", visualEffect: { type: "bubbles" }, reactionOptions: ["Turns green", "Gets cold"], points: 10, hint: "An acid plus a base often makes gas!", explanation: "Vinegar is an acid (acetic acid) and baking soda is a base (sodium bicarbonate). When they mix, they undergo a chemical reaction that produces carbon dioxide gas. These are the bubbles you see, which quickly make the mixture fizz and expand." },
+          { level: 2, chemicalA: { name: "Lemon Juice", color: "#F7F688" }, chemicalB: { name: "Soap", color: "#E6E6FA" }, distractors: [{ name: "Oil", color: "#F5F5DC" }], reaction: "Liquid becomes cloudy", visualEffect: { type: "colorChange", color: "#D3D3D3" }, reactionOptions: ["Forms crystals", "Smokes"], points: 10, hint: "Acids can change the structure of soap.", explanation: "Soap is made of long molecules that mix well with both water and oil. The citric acid in lemon juice breaks these molecules apart. This causes them to clump together and separate from the water, making the solution look cloudy or milky." },
+          { level: 3, chemicalA: { name: "Red Cabbage Juice", color: "#8A2BE2" }, chemicalB: { name: "Ammonia", color: "#F0FFF0" }, distractors: [{ name: "Sugar", color: "#FDFDFD" }], reaction: "Turns greenish-yellow", visualEffect: { type: "colorChange", color: "#ADFF2F" }, reactionOptions: ["Turns bright red", "Freezes"], points: 15, hint: "Some plant juices change color in acids or bases.", explanation: "Red cabbage contains a pigment molecule called flavin, which is a natural pH indicator. In acidic solutions, it turns red. In neutral solutions, it's purplish. In basic (alkaline) solutions like ammonia, it turns a greenish-yellow color. This is a great way to test if something is an acid or a base!" },
+          { level: 4, chemicalA: { name: "Hydrogen Peroxide", color: "#F0FFFF" }, chemicalB: { name: "Yeast", color: "#BDB76B" }, distractors: [{ name: "Flour", color: "#FFFAF0" }], reaction: "Foams up rapidly", visualEffect: { type: "bubbles" }, reactionOptions: ["Glows in the dark", "Turns solid"], points: 15, hint: "Yeast contains something that speeds up reactions.", explanation: "Yeast contains an enzyme called catalase, which acts as a catalyst. A catalyst speeds up a chemical reaction without being used up itself. Catalase rapidly breaks down hydrogen peroxide (H₂O₂) into water (H₂O) and oxygen gas (O₂). The fast production of oxygen gas creates all the foam." },
+          { level: 5, chemicalA: { name: "Copper Sulfate", color: "#3399FF" }, chemicalB: { name: "Ammonia", color: "#F0FFF0" }, distractors: [{ name: "Salt", color: "#F0F0F0" }], reaction: "Forms a deep blue liquid", visualEffect: { type: "colorChange", color: "#00008B" }, reactionOptions: ["Turns orange", "Forms a metal chunk"], points: 20, hint: "Sometimes mixing two chemicals creates a new, more colorful one.", explanation: "When ammonia is added to a solution of copper sulfate, the ammonia molecules bond with the copper ions. This creates a new, larger molecule called a complex ion (tetraamminecopper(II)). This new complex ion has a very distinct, deep royal blue color, which is much darker than the original light blue of copper sulfate." },
+          { level: 6, chemicalA: { name: "Iron Chloride", color: "#FFBF00" }, chemicalB: { name: "Sodium Bicarbonate", color: "#F8F8FF" }, distractors: [{ name: "Sand", color: "#F4A460" }], reaction: "Forms a rusty brown solid", visualEffect: { type: "colorChange", color: "#A52A2A" }, reactionOptions: ["Becomes clear", "Turns purple"], points: 20, hint: "Sometimes a reaction can make a solid appear from two liquids.", explanation: "This is a precipitation reaction. When the two clear solutions are mixed, the iron ions (Fe³⁺) react with the bicarbonate ions to form iron(III) hydroxide, a solid that is not soluble in water. This solid is called a precipitate, and it has the same chemical composition as rust, giving it a rusty brown color." },
+          { level: 7, chemicalA: { name: "Potassium Iodide", color: "#F5F5F5" }, chemicalB: { name: "Lead Nitrate", color: "#FAFAD2" }, distractors: [{ name: "Glycerin", color: "#E0E0E0" }], reaction: "Forms a bright yellow solid", visualEffect: { type: "colorChange", color: "#FFD700" }, reactionOptions: ["Creates smoke", "Disappears"], points: 25, hint: "This reaction is famous for its brilliant color.", explanation: "This is another classic precipitation reaction. Both potassium iodide and lead nitrate are clear, colorless solutions. When mixed, the lead ions (Pb²⁺) and iodide ions (I⁻) instantly combine to form lead iodide (PbI₂), a very dense, bright yellow solid that falls out of the solution. It's sometimes called the 'Golden Rain' experiment." },
+          { level: 8, chemicalA: { name: "Silver Nitrate", color: "#C0C0C0" }, chemicalB: { name: "Salt Water", color: "#ADD8E6" }, distractors: [{ name: "Sugar Water", color: "#E1EBEE" }], reaction: "Forms a white, cloudy solid", visualEffect: { type: "colorChange", color: "#FFFFFF" }, reactionOptions: ["Turns pink", "Glows"], points: 25, hint: "Salt contains an element that reacts strongly with silver.", explanation: "Salt (sodium chloride, NaCl) in water breaks up into sodium ions and chloride ions (Cl⁻). Silver nitrate (AgNO₃) contains silver ions (Ag⁺). Silver ions and chloride ions have a very strong attraction and react to form silver chloride (AgCl), a white solid that is insoluble in water. This precipitation reaction makes the solution instantly cloudy." },
+          { level: 9, chemicalA: { name: "Magnesium Strip", color: "#DCDCDC" }, chemicalB: { name: "Hydrochloric Acid", color: "#B0E0E6" }, distractors: [{ name: "Water", color: "#A7D7F3" }], reaction: "Bubbles and dissolves", visualEffect: { type: "bubbles" }, reactionOptions: ["Turns to gold", "Freezes solid"], points: 30, hint: "A more reactive metal can push another element out of a compound.", explanation: "This is a single replacement reaction. Magnesium is a more reactive metal than the hydrogen in hydrochloric acid (HCl). The magnesium pushes the hydrogen out of the acid, taking its place to form magnesium chloride (MgCl₂). The displaced hydrogen atoms pair up to form hydrogen gas (H₂), which you see as bubbles." },
+          { level: 10, chemicalA: { name: "Sodium Silicate", color: "#F0F8FF" }, chemicalB: { name: "Ethanol", color: "#E6E6FA" }, distractors: [{ name: "Oil", color: "#F5F5DC" }], reaction: "Forms a strange gel (silica)", visualEffect: { type: "smoke" }, reactionOptions: ["Teleports", "Turns into a bouncy ball"], points: 30, hint: "One liquid can force a solid to form out of another liquid.", explanation: "Sodium silicate is also known as 'water glass' because it's a solid (silica, the main component of sand) dissolved in water. Ethanol is a type of alcohol that doesn't dissolve silica. When you add ethanol, it draws the water away from the silica, forcing the silica to come out of the solution and form a semi-solid gel structure." },
+          { level: 11, chemicalA: { name: "Copper Wire", color: "#B87333" }, chemicalB: { name: "Silver Nitrate", color: "#C0C0C0" }, distractors: [{ name: "Zinc", color: "#B0C4DE" }], reaction: "Forms silvery crystals", visualEffect: { type: "colorChange", color: "#D1D5DB" }, reactionOptions: ["Turns green", "Melts"], points: 35, hint: "Look closely at the wire. Is the silver moving?", explanation: "This is another single replacement reaction based on reactivity. Copper is more reactive than silver. When you place a copper wire in a silver nitrate solution, the copper atoms dissolve into the solution, pushing the silver ions out. These silver ions then turn back into solid silver atoms and plate onto the copper wire, often forming beautiful, shiny crystals." },
+          { level: 12, chemicalA: { name: "Luminol", color: "#F0F8FF" }, chemicalB: { name: "Bleach", color: "#F5FFFA" }, distractors: [{ name: "Ammonia", color: "#F0FFF0" }], reaction: "Glows a bright blue", visualEffect: { type: "smoke" }, reactionOptions: ["Explodes", "Gets very hot"], points: 40, hint: "This reaction produces light instead of heat!", explanation: "This reaction is an example of chemiluminescence—creating light with chemicals. Bleach (an oxidizer) causes the luminol molecule to enter an excited, high-energy state. As the molecule returns to its normal, stable state, it releases the extra energy not as heat, but as a particle of light (a photon). This is what creates the eerie blue glow, similar to how fireflies work." }
+        ];
+
+        // DOM Elements
+        const gameContainer = document.getElementById('game-container');
+        const syllabusModal = document.getElementById('syllabus-modal');
+        const startGameBtn = document.getElementById('start-game-btn');
+        const levelDisplay = document.getElementById('level-display');
+        const scoreDisplay = document.getElementById('score-display');
+        const timerContainer = document.getElementById('timer-container');
+        const timeDisplay = document.getElementById('time-display');
+        const chemicalsShelf = document.getElementById('chemicals-shelf');
+        const beakerDropzone = document.getElementById('beaker-dropzone');
+        const beakerLiquid = document.getElementById('beaker-liquid');
+        const reactionEffects = document.getElementById('reaction-effects');
+        const instruction = document.getElementById('instruction');
+        const mixedChemicalsDisplay = document.getElementById('mixed-chemicals-display');
+        const predictionModal = document.getElementById('prediction-modal');
+        const chemAName = document.getElementById('chem-a-name');
+        const chemBName = document.getElementById('chem-b-name');
+        const optionsContainer = document.getElementById('options-container');
+        const hintBtn = document.getElementById('hint-btn');
+        const hintText = document.getElementById('hint-text');
+        const feedbackModal = document.getElementById('feedback-modal');
+        const feedbackContent = document.getElementById('feedback-content');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const feedbackText = document.getElementById('feedback-text');
+        const explanationBtn = document.getElementById('explanation-btn');
+        const nextLevelBtn = document.getElementById('next-level-btn');
+        const explanationModalContainer = document.getElementById('explanation-modal-container');
+        const explanationTitle = document.getElementById('explanation-title');
+        const explanationText = document.getElementById('explanation-text');
+        const closeExplanationBtn = document.getElementById('close-explanation-btn');
+
+        startGameBtn.onclick = () => {
+            syllabusModal.classList.add('hidden');
+            gameContainer.classList.remove('hidden');
+            startGame();
+        };
+
+        function startGame() {
+            currentLevel = 0;
+            score = 0;
+            updateScore();
+            setupLevel();
+        }
+        
+        function startTimer() {
+            timeLeft = 60;
+            timeDisplay.textContent = timeLeft;
+            clearInterval(timer);
+            timer = setInterval(() => {
+                timeLeft--;
+                timeDisplay.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    gameOver("Time's up!");
+                }
+            }, 1000);
+        }
+
+        function setupLevel() {
+            levelDisplay.textContent = gameLevels[currentLevel].level;
+            chemicalsShelf.innerHTML = '<h2 class="text-xl font-semibold text-white mb-2">Chemicals</h2>';
+            
+            const level = gameLevels[currentLevel];
+            const levelChemicals = [level.chemicalA, level.chemicalB];
+
+            // Introduce distractors from Level 4 onwards (index 3)
+            if (currentLevel >= 3) {
+                levelChemicals.push(...level.distractors);
+            }
+            levelChemicals.sort(() => Math.random() - 0.5);
+
+            levelChemicals.forEach(chem => {
+                const vial = document.createElement('div');
+                vial.className = 'chemical-vial w-24 h-32 flex flex-col items-center justify-end p-2 rounded-t-full rounded-b-lg';
+                vial.draggable = true;
+                vial.dataset.chemical = chem.name;
+                const liquid = document.createElement('div');
+                liquid.className = 'w-full h-2/3 rounded-b-md';
+                liquid.style.backgroundColor = chem.color;
+                const label = document.createElement('p');
+                label.className = 'text-sm font-bold mt-1';
+                label.textContent = chem.name;
+                vial.appendChild(liquid);
+                vial.appendChild(label);
+                chemicalsShelf.appendChild(vial);
+                vial.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', e.target.closest('.chemical-vial').dataset.chemical));
+            });
+            
+            // Introduce timer from Level 8 onwards (index 7)
+            if (currentLevel >= 7) {
+                timerContainer.classList.remove('hidden');
+                startTimer();
+            } else {
+                timerContainer.classList.add('hidden');
+                clearInterval(timer);
+            }
+
+            resetBeaker();
+        }
+        
+        beakerDropzone.addEventListener('dragover', (e) => { e.preventDefault(); beakerDropzone.classList.add('drag-over'); });
+        beakerDropzone.addEventListener('dragleave', () => beakerDropzone.classList.remove('drag-over'));
+        beakerDropzone.addEventListener('drop', handleDrop);
+
+        function handleDrop(e) {
+            e.preventDefault();
+            beakerDropzone.classList.remove('drag-over');
+            const chemicalName = e.dataTransfer.getData('text/plain');
+            if (selectedChemicals.length < 2 && !selectedChemicals.includes(chemicalName)) {
+                selectedChemicals.push(chemicalName);
+                updateMixedChemicalsDisplay();
+                if (selectedChemicals.length === 2) {
+                    instruction.textContent = "Great! Now predict the outcome.";
+                    setTimeout(showPredictionModal, 500);
+                } else {
+                     instruction.textContent = "Good! Now add one more chemical.";
+                }
+            }
+        }
+        
+        function updateMixedChemicalsDisplay() { mixedChemicalsDisplay.textContent = `In beaker: ${selectedChemicals.join(' + ')}`; }
+        
+        function showPredictionModal() {
+            chemAName.textContent = selectedChemicals[0];
+            chemBName.textContent = selectedChemicals[1];
+            const level = gameLevels[currentLevel];
+            let options = [...level.reactionOptions, level.reaction];
+            options.sort(() => Math.random() - 0.5);
+            optionsContainer.innerHTML = '';
+            options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.className = 'w-full bg-gray-200 p-3 rounded-lg hover:bg-yellow-400 transition-colors';
+                button.onclick = () => checkAnswer(option);
+                optionsContainer.appendChild(button);
+            });
+            hintText.classList.add('hidden');
+            hintText.textContent = '';
+            hintBtn.classList.remove('hidden');
+            hintBtn.onclick = () => {
+                hintText.textContent = level.hint;
+                hintText.classList.remove('hidden');
+                hintBtn.classList.add('hidden');
+            };
+            predictionModal.classList.remove('hidden');
+        }
+
+        function checkAnswer(selectedReaction) {
+            predictionModal.classList.add('hidden');
+            const level = gameLevels[currentLevel];
+            const isCorrectMix = selectedChemicals.includes(level.chemicalA.name) && selectedChemicals.includes(level.chemicalB.name);
+            const isCorrectPrediction = selectedReaction === level.reaction;
+            
+            // Stop timer if it's active
+            if (currentLevel >= 7) {
+                clearInterval(timer);
+            }
+
+            if (isCorrectMix && isCorrectPrediction) {
+                let points = level.points;
+                let pointsText = `You earned ${points} points.`;
+                
+                // Add speed bonus from level 8 onwards
+                if (currentLevel >= 7) {
+                    const bonus = Math.floor(timeLeft / 10);
+                    points += bonus;
+                    pointsText = `You earned ${level.points} points + a ${bonus} point speed bonus!`
+                }
+                
+                score += points;
+                updateScore();
+                showReaction(level.visualEffect);
+                setTimeout(() => showFeedback(true, `Correct! ${pointsText}`, level), 2500);
+            } else {
+                showReaction(isCorrectMix ? level.visualEffect : {type: 'inert'});
+                setTimeout(() => showFeedback(false, `Not quite! The correct reaction is: "${level.reaction}"`, level), 2500);
+            }
+        }
+
+        function showReaction(effect) {
+            reactionEffects.innerHTML = '';
+            beakerLiquid.style.transition = 'background-color 1s, height 1s';
+            if (effect.type === 'bubbles') { for (let i = 0; i < 20; i++) { const el = document.createElement('div'); el.className = 'bubble'; el.style.left = `${Math.random()*80+10}%`; el.style.animationDelay = `${Math.random()*2}s`; reactionEffects.appendChild(el); } }
+            if (effect.type === 'colorChange') { beakerLiquid.style.backgroundColor = effect.color; }
+            if (effect.type === 'smoke') { const el = document.createElement('div'); el.className = 'smoke'; reactionEffects.appendChild(el); }
+            if (effect.type === 'inert') { beakerLiquid.style.backgroundColor = '#a0aec0'; }
+        }
+        
+        function showFeedback(isCorrect, text, level) {
+            feedbackModal.classList.remove('hidden');
+            feedbackTitle.textContent = isCorrect ? 'Awesome Job!' : 'Good Try!';
+            feedbackText.innerHTML = `${text}<br><br><span class="text-sm italic">${level.hint}</span>`;
+            feedbackContent.style.backgroundColor = isCorrect ? '#a7f3d0' : '#fecaca';
+            feedbackTitle.style.color = isCorrect ? '#065f46' : '#991b1b';
+            nextLevelBtn.style.backgroundColor = isCorrect ? '#2563eb' : '#f59e0b';
+            nextLevelBtn.textContent = isCorrect ? "Next Level" : "Try Again";
+            setTimeout(() => { feedbackContent.classList.remove('scale-95', 'opacity-0'); feedbackContent.classList.add('scale-100', 'opacity-100'); }, 100);
+
+            explanationBtn.onclick = () => {
+                explanationTitle.textContent = `The Science Behind: ${level.chemicalA.name} + ${level.chemicalB.name}`;
+                explanationText.textContent = level.explanation;
+                explanationModalContainer.classList.remove('hidden');
+            };
+
+            nextLevelBtn.onclick = () => {
+                feedbackContent.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    feedbackModal.classList.add('hidden');
+                     if (isCorrect) {
+                        currentLevel++;
+                        if (currentLevel >= gameLevels.length) { gameOver("You're a master chemist!"); } else { setupLevel(); }
+                    } else { setupLevel(); }
+                }, 300);
+            };
+        }
+        
+        closeExplanationBtn.onclick = () => explanationModalContainer.classList.add('hidden');
+
+        function resetBeaker() {
+            selectedChemicals = [];
+            updateMixedChemicalsDisplay();
+            instruction.textContent = "Drag two chemicals into the beaker to mix!";
+            beakerLiquid.style.backgroundColor = '#60a5fa';
+            reactionEffects.innerHTML = '';
+        }
+        
+        function updateScore() { scoreDisplay.textContent = score; }
+        
+        function gameOver(message) {
+            clearInterval(timer);
+            feedbackTitle.textContent = "Congratulations!";
+            feedbackText.textContent = `${message} Your final score is ${score}.`;
+            explanationBtn.classList.add('hidden');
+            nextLevelBtn.textContent = "Play Again";
+            nextLevelBtn.onclick = () => location.reload();
+            feedbackModal.classList.remove('hidden');
+            feedbackContent.classList.remove('scale-95', 'opacity-0');
+        }
+    </script>
+</body>
+</html>
+
+
+
+
+
